@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Study Reward System 📚</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #fff8ef;
+    --surface: #ffffff;
+    --surface2: #fff2df;
+    --border: #ead9c5;
+    --accent: #7bb661;
+    --accent2: #e6a23c;
+    --accent3: #6baed6;
+    --text: #2f2a24;
+    --muted: #7f7468;
+    --danger: #d96c75;
+    --success: #4f9f72;
+    --shadow: 0 12px 32px rgba(112, 84, 51, .10);
+    --radius: 14px;
+    --radius-lg: 22px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .wrapper {
+    position: relative; z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+  .header-left h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .header-left h1 span { color: var(--accent); }
+  .header-left p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 6px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .today-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+    color: var(--accent3);
+    white-space: nowrap;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-card .label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .stat-card .value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-top: 4px;
+  }
+  .stat-card .sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 3px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .stat-card.accent-card { border-color: var(--accent); background: #181f0a; }
+  .stat-card.accent-card .value { color: var(--accent); }
+  .stat-card.streak-card { border-color: var(--accent2); background: #1f1a08; }
+  .stat-card.streak-card .value { color: var(--accent2); }
+
+  /* Progress section */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* Milestone progress */
+  .milestone-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .milestone-label {
+    font-size: 0.8rem;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-width: 64px;
+    color: var(--muted);
+  }
+  .progress-bar-wrap {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+    position: relative;
+  }
+  .bar-small { background: linear-gradient(90deg, var(--accent3), var(--accent)); }
+  .bar-big   { background: linear-gradient(90deg, var(--accent2), var(--danger)); }
+
+  .progress-pct {
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+    min-width: 36px;
+    text-align: right;
+    color: var(--text);
+  }
+
+  /* Milestone chip */
+  .milestone-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border: 1px solid;
+    margin-right: 8px;
+    margin-bottom: 8px;
+  }
+  .chip-small { border-color: var(--accent3); color: var(--accent3); background: rgba(53,200,241,.07); }
+  .chip-big   { border-color: var(--accent2); color: var(--accent2); background: rgba(241,181,53,.07); }
+  .chip-done  { border-color: var(--success); color: var(--success); background: rgba(53,241,160,.07); }
+
+  /* Controls */
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .controls-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--surface2);
+    color: var(--text);
+    transition: all .15s;
+    letter-spacing: 0.5px;
+  }
+  .btn:hover { border-color: var(--accent); background: #1c2210; color: var(--accent); }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: var(--accent); color: #0d0d10; border-color: var(--accent); }
+  .btn.primary:hover { background: #d9ff50; border-color: #d9ff50; }
+  .btn.danger  { background: var(--surface2); border-color: var(--danger); color: var(--danger); }
+  .btn.danger:hover { background: #2a1015; }
+  .btn.warning { border-color: var(--accent2); color: var(--accent2); }
+  .btn.warning:hover { background: #1f1a08; }
+  .btn.info    { border-color: var(--accent3); color: var(--accent3); }
+  .btn.info:hover { background: #08181f; }
+  .btn.sm { padding: 8px 12px; font-size: 0.72rem; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
+
+  /* Timer */
+  .timer-display {
+    text-align: center;
+    padding: 28px 0 16px;
+  }
+  .timer-time {
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 4rem;
+    font-weight: 700;
+    letter-spacing: -2px;
+    color: var(--accent);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(200,241,53,.3);
+    transition: color .3s;
+  }
+  .timer-time.paused { color: var(--muted); text-shadow: none; }
+  .timer-status {
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .timer-status .dot-live {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    margin-right: 5px;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .4; transform: scale(.7); }
+  }
+
+  /* Session log */
+  .session-list {
+    list-style: none;
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .session-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    transition: border-color .15s;
+  }
+  .session-item:hover { border-color: var(--accent3); }
+  .session-item .si-time { color: var(--muted); min-width: 52px; }
+  .session-item .si-dur  { color: var(--accent); font-weight: 700; min-width: 60px; }
+  .session-item .si-type {
+    flex: 1;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+  }
+  .si-type.add  { background: rgba(53,241,160,.12); color: var(--success); }
+  .si-type.sub  { background: rgba(241,80,96,.12); color: var(--danger); }
+  .si-type.session { background: rgba(200,241,53,.12); color: var(--accent); }
+
+  /* Manual adjust */
+  .adjust-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .input-group {
+    display: flex;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color .15s;
+    flex: 1;
+    min-width: 140px;
+  }
+  .input-group:focus-within { border-color: var(--accent3); }
+  .input-group input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.85rem;
+    padding: 10px 14px;
+  }
+  .input-group .unit {
+    padding: 10px 12px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    color: var(--muted);
+    border-left: 1px solid var(--border);
+  }
+
+  /* Streak calendar */
+  .streak-grid {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .streak-day {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.6rem;
+    color: var(--muted);
+    cursor: default;
+    transition: all .15s;
+  }
+  .streak-day.active {
+    background: rgba(241,181,53,.15);
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+  .streak-day.today {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 8px rgba(200,241,53,.3);
+  }
+  .streak-day.today.active {
+    background: rgba(200,241,53,.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Reward popup overlay */
+  .overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,.75);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn .2s ease;
+  }
+  .overlay.hidden { display: none; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px 28px;
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    animation: slideUp .3s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px) scale(.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal .emoji { font-size: 3.5rem; margin-bottom: 10px; display: block; }
+  .modal h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 6px; }
+  .modal p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 20px; }
+  .modal .reward-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .reward-option {
+    padding: 10px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    color: var(--text);
+    cursor: pointer;
+    transition: all .15s;
+    line-height: 1.4;
+  }
+  .reward-option:hover { border-color: var(--accent2); color: var(--accent2); background: #1f1a08; }
+  .reward-option.selected { border-color: var(--accent2); background: rgba(241,181,53,.1); color: var(--accent2); }
+
+  /* Toast */
+  .toast-container {
+    position: fixed;
+    top: 20px; right: 20px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+    color: var(--text);
+    max-width: 280px;
+    animation: toastIn .25s ease;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.success { border-color: var(--success); color: var(--success); }
+  .toast.warning { border-color: var(--accent2); color: var(--accent2); }
+  .toast.info    { border-color: var(--accent3); color: var(--accent3); }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* Tab */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all .15s;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .tab-btn.active {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Rules accordion */
+  .rule-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    font-size: 0.82rem;
+    line-height: 1.7;
+  }
+  .rule-box strong { color: var(--accent); }
+  .rule-box .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.68rem;
+    margin-right: 4px;
+  }
+  .tag-green  { background: rgba(53,241,160,.15); color: var(--success); }
+  .tag-yellow { background: rgba(241,181,53,.15); color: var(--accent2); }
+  .tag-blue   { background: rgba(53,200,241,.15); color: var(--accent3); }
+
+  /* Reset confirm */
+  .reset-row {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  /* Responsive */
+  @media (max-width: 540px) {
+    .controls-grid { grid-template-columns: 1fr; }
+    .controls-grid-3 { grid-template-columns: 1fr 1fr; }
+    .timer-time { font-size: 2.8rem; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .modal .reward-options { grid-template-columns: 1fr; }
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 28px;
+    color: var(--muted);
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.75rem;
+  }
+
+
+  /* Wheel / Exchange */
+  .spin-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 16px;
+    align-items: start;
+  }
+  .wheel-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .wheel-wrap {
+    position: relative;
+    width: min(320px, 100%);
+    aspect-ratio: 1;
+    margin: 8px auto 16px;
+  }
+  canvas#wheelCanvas {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 8px solid var(--border);
+    background: var(--surface);
+    box-shadow: 0 0 40px rgba(0,0,0,.35);
+    transition: transform 4s cubic-bezier(.12,.75,.18,1);
+  }
+  .wheel-pointer {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 16px solid transparent;
+    border-right: 16px solid transparent;
+    border-top: 30px solid var(--accent2);
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,.4));
+    z-index: 2;
+  }
+  .wheel-center {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    width: 82px; height: 82px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: .72rem;
+    color: var(--accent);
+    font-weight: 700;
+    z-index: 1;
+  }
+  .result-box {
+    border: 1px dashed var(--border);
+    background: rgba(255,255,255,.03);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-top: 12px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: .78rem;
+    color: var(--muted);
+    min-height: 48px;
+  }
+  .result-box strong { color: var(--accent2); }
+  .ticket-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .ticket-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .ticket-card .ticket-num {
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 800;
+    margin-top: 4px;
+  }
+  .ticket-small .ticket-num { color: var(--accent3); }
+  .ticket-big .ticket-num { color: var(--accent2); }
+  .mode-toggle {
+    display: flex;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 5px;
+    margin-bottom: 14px;
+  }
+  .mode-toggle button {
+    flex: 1;
+    border: 0;
+    border-radius: 8px;
+    padding: 9px 10px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 700;
+    font-size: .72rem;
+  }
+  .mode-toggle button.active {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .editor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  textarea.reward-editor {
+    width: 100%;
+    min-height: 220px;
+    resize: vertical;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 12px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: .78rem;
+    line-height: 1.55;
+    outline: none;
+  }
+  textarea.reward-editor:focus { border-color: var(--accent3); }
+  .tiny-note {
+    color: var(--muted);
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: .72rem;
+    line-height: 1.6;
+  }
+
+  .shopping-card {
+    background: linear-gradient(135deg, #fff8e8, #eef9f0);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-top: 14px;
+  }
+  .shopping-balance {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--success);
+    line-height: 1;
+    margin: 6px 0 4px;
+  }
+  .shopping-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .special-note {
+    border: 1px dashed var(--accent2);
+    background: rgba(230,162,60,.10);
+    color: var(--text);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: .76rem;
+    line-height: 1.55;
+    margin-top: 10px;
+  }
+  .money-history {
+    list-style: none;
+    margin-top: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+  .money-history li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px dashed rgba(234,217,197,.9);
+    font-size: .76rem;
+    color: var(--muted);
+  }
+  .money-history strong { color: var(--text); }
+  .money-plus { color: var(--success); font-weight: 800; }
+  .money-minus { color: var(--danger); font-weight: 800; }
+
+  @media (max-width: 760px) {
+    .spin-layout, .editor-grid, .shopping-actions { grid-template-columns: 1fr; }
+  }
+
+
+  /* Light cozy theme override */
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(255, 225, 186, .65), transparent 34%),
+      radial-gradient(circle at top right, rgba(205, 233, 248, .65), transparent 32%),
+      var(--bg);
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  body::before {
+    background-image:
+      linear-gradient(rgba(234,217,197,.42) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(234,217,197,.42) 1px, transparent 1px);
+    background-size: 36px 36px;
+    opacity: .45;
+  }
+  .wrapper { max-width: 980px; }
+  .header { margin-bottom: 28px; }
+  .header-left h1 {
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: .95;
+    color: #2f2a24;
+  }
+  .header-left h1 span { color: var(--accent); }
+  .header-left p, .section-title, .stat-card .label, .stat-card .sub,
+  .today-badge, .btn, .tab-btn, .milestone-label, .progress-pct,
+  .milestone-chip, .timer-status, .session-item, .tiny-note,
+  textarea.reward-editor, .result-box, .mode-toggle button, .input-group input,
+  .input-group .unit, .empty-state, .rule-box .tag {
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: .01em;
+  }
+  .today-badge, .tabs, .mode-toggle, .input-group, .progress-bar-wrap {
+    background: rgba(255,255,255,.78);
+    box-shadow: 0 6px 18px rgba(112,84,51,.06);
+  }
+  .section, .stat-card, .wheel-card, .ticket-card, .rule-box, .modal {
+    background: rgba(255,255,255,.86);
+    border-color: var(--border);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(8px);
+  }
+  .stat-card:hover, .section:hover, .ticket-card:hover { border-color: #d9b98f; }
+  .stat-card.accent-card {
+    background: linear-gradient(135deg, #f2f8e9, #ffffff);
+    border-color: #cfe2bd;
+  }
+  .stat-card.accent-card .value { color: #5f9b47; }
+  .stat-card.streak-card {
+    background: linear-gradient(135deg, #fff3d8, #ffffff);
+    border-color: #efd198;
+  }
+  .stat-card.streak-card .value { color: #d28a20; }
+  .tabs { padding: 6px; gap: 6px; }
+  .tab-btn.active, .mode-toggle button.active {
+    background: #fff7ec;
+    color: #2f2a24;
+    border-color: #e8cfae;
+    box-shadow: 0 4px 12px rgba(112,84,51,.08);
+  }
+  .btn {
+    background: #fff9f0;
+    color: var(--text);
+    border-color: var(--border);
+    box-shadow: 0 6px 14px rgba(112,84,51,.08);
+  }
+  .btn:hover { background: #fff3df; border-color: #d9b98f; color: #9b6a26; }
+  .btn.primary { background: #8ecf72; color: #17330f; border-color: #8ecf72; }
+  .btn.primary:hover { background: #a4dc8b; border-color: #a4dc8b; color: #17330f; }
+  .btn.warning { background:#fff6df; border-color:#efc979; color:#b77713; }
+  .btn.warning:hover { background:#ffedc0; }
+  .btn.info { background:#eef8ff; border-color:#b9dcf0; color:#3c83ad; }
+  .btn.info:hover { background:#dff2ff; }
+  .btn.danger { background:#fff0f1; border-color:#efb7bd; color:#c5545e; }
+  .btn.danger:hover { background:#ffe4e7; }
+  .timer-time {
+    color: #5f9b47;
+    text-shadow: none;
+    font-family: 'Nunito', system-ui, sans-serif;
+    letter-spacing: -0.04em;
+  }
+  .timer-time.paused { color: #a69b8f; }
+  .bar-small { background: linear-gradient(90deg, #87c9e8, #a5d882); }
+  .bar-big { background: linear-gradient(90deg, #f3c66d, #e9878f); }
+  .chip-small { border-color:#a9d8ef; color:#3c83ad; background:#eef8ff; }
+  .chip-big { border-color:#efc979; color:#b77713; background:#fff6df; }
+  .chip-done { border-color:#b6ddb7; color:#4f9f72; background:#eff9ef; }
+  .si-type.add, .si-type.session { background:#eff9ef; color:#4f9f72; }
+  .si-type.sub { background:#fff0f1; color:#c5545e; }
+  .streak-day { background: #fffdf8; }
+  .streak-day.active { background:#fff1c9; border-color:#efc979; color:#b77713; }
+  .streak-day.today { border-color:#8ecf72; color:#5f9b47; box-shadow: 0 0 0 4px rgba(142,207,114,.18); }
+  .streak-day.today.active { background:#eaf7df; border-color:#8ecf72; color:#5f9b47; }
+
+  .streak-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .streak-mini-card {
+    background: #fffaf3;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+  .streak-mini-card .mini-label {
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: .72rem;
+    color: var(--muted);
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .streak-mini-card .mini-value {
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: var(--text);
+    margin-top: 2px;
+  }
+  .calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 6px 0 12px;
+    flex-wrap: wrap;
+  }
+  .calendar-title {
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-weight: 900;
+    color: var(--text);
+    font-size: 1.05rem;
+  }
+  .calendar-actions { display: flex; gap: 8px; }
+  .streak-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .calendar-weekday {
+    text-align: center;
+    color: var(--muted);
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: .72rem;
+    font-weight: 800;
+    padding: 4px 0;
+  }
+  .calendar-day {
+    min-height: 58px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: #fffdf8;
+    padding: 7px 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 3px;
+    position: relative;
+  }
+  .calendar-day.empty { background: transparent; border-color: transparent; }
+  .calendar-day.qualified { background: #eaf7df; border-color: #a8d894; }
+  .calendar-day.studied { background: #fff6df; border-color: #efc979; }
+  .calendar-day.today { box-shadow: 0 0 0 3px rgba(142,207,114,.22); border-color: #8ecf72; }
+  .calendar-day-number {
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-weight: 900;
+    font-size: .85rem;
+    color: var(--text);
+  }
+  .calendar-day-minutes {
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: .68rem;
+    font-weight: 800;
+    color: var(--muted);
+  }
+  .calendar-day.qualified .calendar-day-minutes { color: #4f9f72; }
+  .calendar-legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    color: var(--muted);
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: .75rem;
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 999px;
+    margin-right: 5px;
+    vertical-align: -1px;
+    border: 1px solid var(--border);
+  }
+  .legend-dot.qualified { background:#eaf7df; border-color:#a8d894; }
+  .legend-dot.studied { background:#fff6df; border-color:#efc979; }
+  .legend-dot.today { background:#fffdf8; border-color:#8ecf72; box-shadow:0 0 0 2px rgba(142,207,114,.22); }
+  @media (max-width: 540px) {
+    .calendar-day { min-height: 46px; border-radius: 11px; padding: 5px 6px; }
+    .calendar-day-minutes { font-size: .6rem; }
+    .calendar-actions .btn { padding: 8px 10px; }
+  }
+
+  /* Streak reward roadmap */
+  .streak-roadmap-header {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .roadmap-stat {
+    background: #fffdf8;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px 14px;
+  }
+  .roadmap-stat .label {
+    color: var(--muted);
+    font-size: .74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .roadmap-stat .value {
+    color: var(--text);
+    font-size: 1.35rem;
+    font-weight: 900;
+    margin-top: 2px;
+  }
+  .streak-reward-list {
+    display: grid;
+    gap: 10px;
+  }
+  .streak-reward-item {
+    display: grid;
+    grid-template-columns: 92px 1fr 112px;
+    gap: 12px;
+    align-items: center;
+    background: #fffdf8;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 12px 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .streak-reward-item.done {
+    background: #eef9e7;
+    border-color: #a8d894;
+  }
+  .streak-reward-item.next {
+    background: #fff6df;
+    border-color: #efc979;
+    box-shadow: 0 8px 22px rgba(210, 138, 32, .10);
+  }
+  .streak-reward-days {
+    width: 76px;
+    height: 76px;
+    border-radius: 999px;
+    background: #f7efe4;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.05;
+  }
+  .streak-reward-days .num { font-size: 1.25rem; }
+  .streak-reward-days .unit { font-size: .68rem; color: var(--muted); }
+  .streak-reward-item.done .streak-reward-days { background: #dff4d5; border-color:#a8d894; color:#4f9f72; }
+  .streak-reward-item.next .streak-reward-days { background: #ffe9aa; border-color:#efc979; color:#b77713; }
+  .streak-reward-main { min-width: 0; }
+  .streak-reward-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .streak-reward-status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: .68rem;
+    font-weight: 900;
+    background: #f7efe4;
+    color: var(--muted);
+  }
+  .streak-reward-item.done .streak-reward-status { background:#dff4d5; color:#4f9f72; }
+  .streak-reward-item.next .streak-reward-status { background:#ffe9aa; color:#b77713; }
+  .streak-reward-desc {
+    color: var(--muted);
+    font-size: .86rem;
+    line-height: 1.45;
+  }
+  .streak-reward-progress-wrap {
+    display: grid;
+    gap: 5px;
+  }
+  .streak-reward-progress {
+    height: 10px;
+    border-radius: 999px;
+    background: #f0e6d9;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .streak-reward-progress span {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #a8d894, #efc979);
+    border-radius: inherit;
+  }
+  .streak-reward-percent {
+    text-align: right;
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 900;
+  }
+  @media (max-width: 640px) {
+    .streak-reward-item { grid-template-columns: 64px 1fr; }
+    .streak-reward-days { width: 58px; height: 58px; }
+    .streak-reward-progress-wrap { grid-column: 1 / -1; }
+  }
+
+  .overlay { background: rgba(71,52,35,.30); backdrop-filter: blur(8px); }
+  .reward-option, textarea.reward-editor, .input-group, .ticket-card, .wheel-card, .rule-box {
+    background: #fffaf3;
+  }
+  .reward-option:hover, .reward-option.selected {
+    border-color:#efc979;
+    background:#fff1cf;
+    color:#9b6a26;
+  }
+  .result-box { background:#fffaf3; border-color:#ead9c5; }
+  canvas#wheelCanvas {
+    border-color: #fffaf3;
+    background: #fffdf8;
+    box-shadow: 0 14px 36px rgba(112,84,51,.16);
+  }
+  .wheel-center {
+    background: #fffdf8;
+    border-color: #8ecf72;
+    color: #5f9b47;
+    box-shadow: 0 6px 16px rgba(112,84,51,.12);
+  }
+  .wheel-pointer {
+    border-top-color: #e6a23c;
+    filter: drop-shadow(0 3px 5px rgba(112,84,51,.20));
+  }
+  .toast {
+    background:#fffdf8;
+    color:var(--text);
+    box-shadow: var(--shadow);
+  }
+
+</style></head>
+<body>
+
+<div class="wrapper">
+  <div class="header">
+    <div class="header-left">
+      <h1>Study <span>Reward</span><br>Wheel</h1>
+      <p>Theo dõi giờ học · Đổi lượt quay · Random thưởng</p>
+    </div>
+    <div class="today-badge" id="todayBadge">—</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card accent-card">
+      <div class="label">Tổng giờ học</div>
+      <div class="value" id="totalHours">0.0</div>
+      <div class="sub">giờ all-time</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Hôm nay</div>
+      <div class="value" id="todayMinutes" style="color:var(--accent3)">0</div>
+      <div class="sub">phút / tối thiểu 60</div>
+    </div>
+    <div class="stat-card streak-card">
+      <div class="label">Streak 🔥</div>
+      <div class="value" id="streakCount">0</div>
+      <div class="sub">ngày liên tiếp</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Giờ chưa đổi</div>
+      <div class="value" id="availableHours" style="color:var(--accent2)">0.0</div>
+      <div class="sub">dùng để đổi vé quay</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Quỹ shopping</div>
+      <div class="value" id="shoppingFundTop" style="color:var(--success)">0k</div>
+      <div class="sub">tích được sau khi quay</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('timer')">⏱ Timer</button>
+    <button class="tab-btn" onclick="switchTab('spin')">🎡 Đổi & Quay</button>
+    <button class="tab-btn" onclick="switchTab('progress')">📊 Tiến độ</button>
+    <button class="tab-btn" onclick="switchTab('rewards')">✏️ Cài thưởng</button>
+    <button class="tab-btn" onclick="switchTab('history')">📋 Lịch sử</button>
+    <button class="tab-btn" onclick="switchTab('rules')">📖 Luật</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-timer">
+    <div class="section">
+      <div class="section-title"><span class="dot"></span>PHIÊN HỌC</div>
+      <div class="timer-display">
+        <div class="timer-time" id="timerDisplay">00:00:00</div>
+        <div class="timer-status" id="timerStatus">— chưa bắt đầu —</div>
+      </div>
+      <div class="controls-grid">
+        <button class="btn primary" id="btnStart" onclick="startTimer()">▶ Bắt đầu học</button>
+        <button class="btn warning" id="btnPause" onclick="pauseTimer()" disabled>⏸ Tạm dừng</button>
+      </div>
+      <div class="controls-grid">
+        <button class="btn info" id="btnResume" onclick="resumeTimer()" disabled>▶ Tiếp tục</button>
+        <button class="btn danger" id="btnStop" onclick="stopTimer()" disabled>⏹ Kết thúc phiên</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:var(--accent2)"></span>CỘNG / TRỪ GIỜ THỦ CÔNG</div>
+      <div class="adjust-row">
+        <div class="input-group"><input type="number" id="adjustMin" placeholder="Nhập số phút" min="1" max="600"/><span class="unit">phút</span></div>
+        <div class="input-group" style="max-width:220px"><input type="text" id="adjustNote" placeholder="Ghi chú"/></div>
+      </div>
+      <div class="controls-grid" style="margin-top:10px">
+        <button class="btn info" onclick="manualAdjust('add')">＋ Cộng giờ</button>
+        <button class="btn danger" onclick="manualAdjust('sub')">－ Trừ giờ</button>
+      </div>
+      <div id="adjustStatus" style="margin-top:10px;font-size:.78rem;color:var(--muted);font-family:'Nunito',sans-serif;min-height:20px"></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-spin">
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:var(--accent2)"></span>ĐỔI LƯỢT QUAY</div>
+      <div class="ticket-grid">
+        <div class="ticket-card ticket-small"><div class="label">Vé quay nhỏ</div><div class="ticket-num" id="smallTickets">0</div><div class="sub">cost: 120 phút</div></div>
+        <div class="ticket-card ticket-big"><div class="label">Vé quay lớn</div><div class="ticket-num" id="bigTickets">0</div><div class="sub">cost: 600 phút hoặc 10 điểm</div></div>
+      </div>
+      <div class="controls-grid-3">
+        <button class="btn info" onclick="exchangeSmallTicket()">🎟 Đổi vé nhỏ<br><span style="font-size:.65rem;font-weight:400">-120 phút</span></button>
+        <button class="btn warning" onclick="exchangeBigTicket('minutes')">🏆 Đổi vé lớn<br><span style="font-size:.65rem;font-weight:400">-600 phút</span></button>
+        <button class="btn warning" onclick="exchangeBigTicket('points')">⭐ Đổi bằng điểm<br><span style="font-size:.65rem;font-weight:400">-10 điểm</span></button>
+      </div>
+      <p class="tiny-note">Không còn popup tự chọn thưởng. Khi đủ giờ, bạn tự vào tab này để đổi vé; đổi xong hệ thống tự trừ thời gian/điểm.</p>
+    </div>
+
+    <div class="spin-layout">
+      <div class="wheel-card">
+        <div class="mode-toggle">
+          <button id="modeSmall" class="active" onclick="setWheelMode('small')">🎡 Wheel nhỏ</button>
+          <button id="modeBig" onclick="setWheelMode('big')">🏆 Wheel lớn</button>
+        </div>
+        <div class="wheel-wrap">
+          <div class="wheel-pointer"></div>
+          <canvas id="wheelCanvas" width="720" height="720"></canvas>
+          <div class="wheel-center" id="wheelCenter">SPIN</div>
+        </div>
+        <button class="btn primary" id="spinBtn" style="width:100%" onclick="spinWheel()">🎰 Quay ngẫu nhiên</button>
+        <div class="result-box" id="spinResult">Kết quả sẽ hiện ở đây sau khi quay.</div>
+      </div>
+
+      <div class="section" style="margin-bottom:0">
+        <div class="section-title"><span class="dot" style="background:var(--accent3)"></span>TRẠNG THÁI ĐỔI VÉ</div>
+        <div class="rule-box">
+          <strong>🎡 Vé nhỏ</strong><br/>
+          <span class="tag tag-green">120 PHÚT</span> Đổi 1 lượt quay nhỏ. Giới hạn <strong>2 vé nhỏ/ngày</strong>.
+        </div>
+        <div class="rule-box">
+          <strong>🏆 Vé lớn</strong><br/>
+          <span class="tag tag-yellow">600 PHÚT</span> hoặc <span class="tag tag-yellow">10 ĐIỂM</span> đổi 1 lượt quay lớn.
+        </div>
+        <div class="rule-box">
+          <strong>⭐ Điểm lớn</strong><br/>
+          Có thể đổi 120 phút thành 2 điểm lớn bằng nút ở dưới nếu hôm nay chưa quá giới hạn.
+        </div>
+        <div class="special-note">
+          <strong>🔁 Ô mặc định:</strong> Wheel luôn có ô “Quay lại + x2 thưởng”. Nếu trúng ô này, bạn được quay lại miễn phí 1 lần và phần thưởng tiếp theo sẽ nhân đôi.
+        </div>
+        <button class="btn warning" style="width:100%;margin-top:10px" onclick="convertSmallToPoints()">⭐ Đổi 120 phút → 2 điểm lớn</button>
+
+        <div class="shopping-card">
+          <div class="section-title" style="margin-bottom:4px"><span class="dot" style="background:var(--success)"></span>QUỸ SHOPPING</div>
+          <div class="shopping-balance" id="shoppingFundBalance">0k</div>
+          <p class="tiny-note">Dùng để tích tiền shopping. Khi tiêu, nhập số tiền để trừ khỏi quỹ.</p>
+          <div class="adjust-row" style="margin-top:10px">
+            <div class="input-group"><input type="number" id="shoppingAmount" placeholder="Số tiền" min="1"/><span class="unit">k</span></div>
+            <div class="input-group" style="max-width:200px"><input type="text" id="shoppingNote" placeholder="Ghi chú"/></div>
+          </div>
+          <div class="shopping-actions">
+            <button class="btn info" onclick="manualShopping('add')">＋ Cộng quỹ</button>
+            <button class="btn danger" onclick="manualShopping('spend')">－ Đã tiêu</button>
+          </div>
+          <ul class="money-history" id="shoppingHistoryList"><li>Chưa có lịch sử quỹ.</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-progress">
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:var(--accent3)"></span>TIẾN ĐỘ ĐỂ ĐỔI VÉ</div>
+      <div class="milestone-row"><span class="milestone-label">2 tiếng</span><div class="progress-bar-wrap"><div class="progress-bar-fill bar-small" id="bar2h" style="width:0%"></div></div><span class="progress-pct" id="pct2h">0%</span></div>
+      <div style="margin-bottom:16px"><span class="milestone-chip chip-small">🎟 Vé quay nhỏ</span><span class="milestone-chip chip-small" id="chip2hStatus">0 / 120 phút</span></div>
+      <div class="milestone-row"><span class="milestone-label">10 tiếng</span><div class="progress-bar-wrap"><div class="progress-bar-fill bar-big" id="bar10h" style="width:0%"></div></div><span class="progress-pct" id="pct10h">0%</span></div>
+      <div style="margin-bottom:16px"><span class="milestone-chip chip-big">🏆 Vé quay lớn</span><span class="milestone-chip chip-big" id="chip10hStatus">0 / 600 phút</span></div>
+      <hr class="divider"/>
+      <div class="section-title"><span class="dot" style="background:var(--accent2)"></span>GIỚI HẠN NGÀY</div>
+      <div class="milestone-row"><span class="milestone-label">Vé nhỏ</span><div class="progress-bar-wrap"><div class="progress-bar-fill bar-small" id="barDaily" style="width:0%"></div></div><span class="progress-pct" id="pctDaily">0/2</span></div>
+      <div style="font-size:0.78rem;color:var(--muted);font-family:'Nunito',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">Đã đổi <strong style="color:var(--accent2)" id="dailyExchangeText">0/2</strong> vé nhỏ hôm nay.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:var(--accent2)"></span>STREAK CALENDAR THEO THÁNG</div>
+      <div class="streak-summary">
+        <div class="streak-mini-card"><div class="mini-label">Streak hiện tại</div><div class="mini-value" id="calendarCurrentStreak">0 ngày</div></div>
+        <div class="streak-mini-card"><div class="mini-label">Dài nhất</div><div class="mini-value" id="calendarBestStreak">0 ngày</div></div>
+        <div class="streak-mini-card"><div class="mini-label">Tổng ngày đạt chuẩn</div><div class="mini-value" id="calendarTotalQualified">0 ngày</div></div>
+        <div class="streak-mini-card"><div class="mini-label">Tháng này</div><div class="mini-value" id="calendarMonthQualified">0 ngày</div></div>
+      </div>
+      <div class="calendar-toolbar">
+        <div class="calendar-title" id="calendarMonthTitle">Tháng này</div>
+        <div class="calendar-actions">
+          <button class="btn sm" onclick="changeStreakMonth(-1)">← Tháng trước</button>
+          <button class="btn sm info" onclick="changeStreakMonth(0)">Hôm nay</button>
+          <button class="btn sm" onclick="changeStreakMonth(1)">Tháng sau →</button>
+        </div>
+      </div>
+      <div class="streak-calendar" id="streakGrid"></div>
+      <div class="calendar-legend">
+        <span><i class="legend-dot qualified"></i>Đạt chuẩn ≥60p</span>
+        <span><i class="legend-dot studied"></i>Có học nhưng chưa đủ 60p</span>
+        <span><i class="legend-dot today"></i>Hôm nay</span>
+      </div>
+      <div style="margin-top:12px;font-size:0.8rem;font-family:'Nunito',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted);line-height:1.6">🔥 Streak chỉ tính ngày đạt <strong style="color:var(--text)">tối thiểu 60 phút</strong>. Calendar này phù hợp để follow dài hạn 50–100 ngày vì có thể chuyển từng tháng.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:var(--success)"></span>LỘ TRÌNH THƯỞNG STREAK</div>
+      <p class="tiny-note" style="margin-bottom:12px">Theo dõi các mốc 7 · 15 · 30 · 45 · 60 · 100 ngày. Bạn có thể sửa nội dung thưởng trong tab <strong>Cài thưởng</strong>.</p>
+      <div id="streakRewardArea"><div class="empty-state">Chưa có mốc streak.</div></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-rewards">
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:var(--accent3)"></span>CÀI ĐẶT PHẦN THƯỞNG CHO WHEEL</div>
+      <p class="tiny-note" style="margin-bottom:12px">Mỗi dòng là 1 ô trên vòng quay. Ô “🔁 Quay lại + x2 thưởng” là ô mặc định, luôn tự thêm vào wheel nên không cần nhập ở đây. Muốn tích quỹ shopping, hãy ghi dạng “Tích quỹ shopping +10k”.</p>
+      <div class="editor-grid">
+        <div>
+          <div class="section-title"><span class="dot" style="background:var(--accent3)"></span>Wheel nhỏ</div>
+          <textarea class="reward-editor" id="smallRewardsEditor"></textarea>
+        </div>
+        <div>
+          <div class="section-title"><span class="dot" style="background:var(--accent2)"></span>Wheel lớn</div>
+          <textarea class="reward-editor" id="bigRewardsEditor"></textarea>
+        </div>
+      </div>
+      <hr class="divider"/>
+      <div class="section-title"><span class="dot" style="background:var(--success)"></span>Thưởng streak</div>
+      <p class="tiny-note" style="margin-bottom:10px">Mỗi dòng theo dạng: <strong>số ngày | phần thưởng</strong>. Ví dụ: <strong>45 | Shopping fund +150k</strong>. Có thể thêm/xóa/sửa mốc tùy ý.</p>
+      <textarea class="reward-editor" id="streakRewardsEditor" style="min-height:190px"></textarea>
+      <div class="controls-grid" style="margin-top:12px">
+        <button class="btn primary" onclick="saveRewardEditors()">💾 Lưu phần thưởng</button>
+        <button class="btn danger" onclick="resetRewardEditors()">↺ Khôi phục mặc định</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-history">
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:var(--accent3)"></span>LỊCH SỬ</div>
+      <ul class="session-list" id="sessionList"><li><div class="empty-state">Chưa có dữ liệu.</div></li></ul>
+    </div>
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:var(--danger)"></span>RESET DỮ LIỆU</div>
+      <p style="font-size:0.78rem;color:var(--muted);font-family:'Nunito',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin-bottom:14px;line-height:1.6">Reset toàn bộ dữ liệu hoặc dữ liệu hôm nay. Không thể hoàn tác!</p>
+      <div class="reset-row"><button class="btn sm" onclick="resetDaily()">Reset ngày hôm nay</button><button class="btn sm danger" id="resetAllBtn" onclick="resetAllData()">⚠ Reset tất cả</button></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-rules">
+    <div class="rule-box"><strong>📌 Phiên học hợp lệ</strong><br/><span class="tag tag-blue">ĐIỀU KIỆN</span> Tối thiểu <strong>25 phút</strong> + có tập trung. Nếu vừa học vừa lướt nhiều → <strong>không tính</strong>.</div>
+    <div class="rule-box"><strong>🎡 Cơ chế mới</strong><br/><span class="tag tag-green">KHÔNG POPUP</span> Đủ mốc sẽ không tự bật chọn thưởng. Bạn tự vào tab <strong>Đổi & Quay</strong> để đổi vé.</div>
+    <div class="rule-box"><strong>🎟 Vé quay nhỏ</strong><br/><span class="tag tag-green">120 PHÚT</span> Đổi 1 vé quay nhỏ, tự trừ 120 phút khỏi giờ chưa đổi. Tối đa <strong>2 vé nhỏ/ngày</strong>. Có thể đổi 120 phút thành <strong>2 điểm lớn</strong>.</div>
+    <div class="rule-box"><strong>🏆 Vé quay lớn</strong><br/><span class="tag tag-yellow">600 PHÚT hoặc 10 ĐIỂM</span> Đổi 1 vé quay lớn. Khi đổi bằng phút sẽ trừ 600 phút; khi đổi bằng điểm sẽ trừ 10 điểm.</div>
+    <div class="rule-box"><strong>🔁 Ô quay lại + x2</strong><br/><span class="tag tag-yellow">MẶC ĐỊNH</span> Wheel luôn có ô này. Trúng ô đó → được quay lại miễn phí 1 lần, phần thưởng tiếp theo x2.</div>
+    <div class="rule-box"><strong>🛍️ Quỹ shopping</strong><br/><span class="tag tag-green">TÍCH TIỀN</span> Option có dạng <strong>Tích quỹ shopping +10k</strong> sẽ tự cộng vào quỹ. Khi mua đồ, vào tab <strong>Đổi & Quay</strong> để trừ số tiền đã tiêu.</div>
+    <div class="rule-box"><strong>✏️ Cài thưởng</strong><br/><span class="tag tag-blue">CUSTOM</span> Vào tab <strong>Cài thưởng</strong> để sửa danh sách option cho wheel nhỏ/lớn. Phần thưởng không cố định trong code nữa.</div>
+    <div class="rule-box"><strong>🔥 Streak</strong><br/><span class="tag tag-yellow">HÀNG NGÀY</span> Tối thiểu <strong>60 phút/ngày</strong>. Mốc thưởng streak mặc định: <strong>7 · 15 · 30 · 45 · 60 · 100 ngày</strong>, có thể sửa trong tab <strong>Cài thưởng</strong>.</div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="overlayStreak">
+  <div class="modal">
+    <span class="emoji">🔥</span>
+    <h2 style="color:var(--accent2)" id="streakModalTitle">Streak!</h2>
+    <p id="streakModalDesc">Bạn đã duy trì streak. Xứng đáng được thưởng!</p>
+    <button class="btn warning" style="width:100%;margin-bottom:10px" onclick="closeModal('overlayStreak')">🎉 Đã rõ!</button>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const DEFAULT_SMALL_REWARDS = [
+  'Xem YouTube/TikTok 20 phút',
+  'Ăn snack yêu thích <30k',
+  'Nghỉ giải lao 20 phút',
+  'Chơi game 20 phút',
+  'Pha trà/cà phê ngon',
+  'Tích quỹ shopping +10k',
+  'Đi bộ ngắn',
+  'Skincare/chill 15 phút',
+  'Nghe nhạc nằm nghỉ 15 phút',
+  'Tự chọn món vui nhỏ',
+  'Tích luỹ thêm, chưa nhận'
+];
+const DEFAULT_BIG_REWARDS = [
+  'Mua item nhỏ <50k',
+  'Đi ăn món thích',
+  'Mua sách/vở xinh',
+  'Shopee haul nhỏ',
+  'Tích quỹ shopping +50k',
+  'Nâng cấp góc học',
+  'Xem phim dài',
+  'Đi cafe học/chill',
+  'Tự chọn phần thưởng lớn'
+];
+
+
+const DEFAULT_STREAK_REWARDS = [
+  { days: 7, reward: 'Tích quỹ shopping +50k hoặc tự chọn thưởng nhỏ dưới 100k' },
+  { days: 15, reward: 'Đi cafe học/chill hoặc tích quỹ shopping +100k' },
+  { days: 30, reward: 'Mua đồ decor/nâng cấp góc học hoặc tích quỹ shopping +200k' },
+  { days: 45, reward: 'Tự chọn phần thưởng lớn vừa phải hoặc tích quỹ shopping +250k' },
+  { days: 60, reward: 'Mua item hỗ trợ học/du học hoặc tích quỹ shopping +300k' },
+  { days: 100, reward: 'Big reward tối đa 500k hoặc món nâng cấp phòng/góc học' }
+];
+
+const SPECIAL_DOUBLE_REWARD = '🔁 Quay lại + x2 thưởng';
+
+const DEFAULT_STATE = {
+  totalMinutes: 0,
+  totalMinutesAllTime: 0,
+  pendingMinutes: 0,
+  bigPoints: 0,
+  smallTickets: 0,
+  bigTickets: 0,
+  dailySmallExchanges: 0,
+  lastDate: '',
+  todayMinutes: 0,
+  dayMinutes: {},
+  streak: 0,
+  streakDays: [],
+  streakRewards: [],
+  streakRewardSettings: DEFAULT_STREAK_REWARDS,
+  sessions: [],
+  smallRewardOptions: DEFAULT_SMALL_REWARDS,
+  bigRewardOptions: DEFAULT_BIG_REWARDS,
+  spinHistory: [],
+  shoppingFund: 0,
+  shoppingHistory: [],
+  freeSpinMode: '',
+  rewardMultiplier: 1
+};
+
+let state = loadState();
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+let timerPaused = false;
+let wheelMode = 'small';
+let wheelRotation = 0;
+let isSpinning = false;
+let streakCalendarOffset = 0;
+let resetAllArmed = false;
+function freshDefaultState() { return JSON.parse(JSON.stringify(DEFAULT_STATE)); }
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('srs_state');
+    if (s) {
+      const parsed = JSON.parse(s);
+      const merged = { ...DEFAULT_STATE, ...parsed };
+      if (typeof merged.dailySmallExchanges !== 'number') merged.dailySmallExchanges = parsed.dailySpins || 0;
+      if (!Array.isArray(merged.smallRewardOptions) || !merged.smallRewardOptions.length) merged.smallRewardOptions = DEFAULT_SMALL_REWARDS;
+      if (!Array.isArray(merged.bigRewardOptions) || !merged.bigRewardOptions.length) merged.bigRewardOptions = DEFAULT_BIG_REWARDS;
+      if (!Array.isArray(merged.streakRewardSettings) || !merged.streakRewardSettings.length) merged.streakRewardSettings = DEFAULT_STREAK_REWARDS;
+      merged.streakRewardSettings = normalizeStreakRewardSettings(merged.streakRewardSettings);
+      if (!merged.dayMinutes) merged.dayMinutes = {};
+      if (typeof merged.shoppingFund !== 'number') merged.shoppingFund = 0;
+      if (!Array.isArray(merged.shoppingHistory)) merged.shoppingHistory = [];
+      if (!merged.freeSpinMode) merged.freeSpinMode = '';
+      if (!merged.rewardMultiplier || merged.rewardMultiplier < 1) merged.rewardMultiplier = 1;
+      return merged;
+    }
+  } catch(e) {}
+  return freshDefaultState();
+}
+function saveState() { localStorage.setItem('srs_state', JSON.stringify(state)); }
+
+function startTimer() {
+  if (timerRunning) return;
+  timerRunning = true; timerPaused = false; timerSeconds = 0;
+  timerInterval = setInterval(tickTimer, 1000);
+  updateTimerUI();
+  document.getElementById('btnStart').disabled = true;
+  document.getElementById('btnPause').disabled = false;
+  document.getElementById('btnStop').disabled = false;
+  document.getElementById('btnResume').disabled = true;
+}
+function pauseTimer() {
+  if (!timerRunning || timerPaused) return;
+  timerPaused = true; clearInterval(timerInterval); updateTimerUI();
+  document.getElementById('btnPause').disabled = true;
+  document.getElementById('btnResume').disabled = false;
+}
+function resumeTimer() {
+  if (!timerPaused) return;
+  timerPaused = false; timerInterval = setInterval(tickTimer, 1000); updateTimerUI();
+  document.getElementById('btnPause').disabled = false;
+  document.getElementById('btnResume').disabled = true;
+}
+function stopTimer() {
+  if (!timerRunning) return;
+  clearInterval(timerInterval); timerRunning = false; timerPaused = false;
+  const minutes = Math.floor(timerSeconds / 60);
+  resetTimerButtons();
+  if (minutes < 25) showToast('⚠ Phiên học dưới 25 phút — không tính!', 'warning');
+  else { addMinutes(minutes, 'session', `Phiên học ${formatDur(minutes)}`); showToast(`✓ Đã ghi nhận ${formatDur(minutes)}!`, 'success'); }
+  timerSeconds = 0;
+  document.getElementById('timerDisplay').textContent = '00:00:00';
+  document.getElementById('timerStatus').innerHTML = '— chưa bắt đầu —';
+}
+function tickTimer() {
+  timerSeconds++;
+  const h = Math.floor(timerSeconds / 3600), m = Math.floor((timerSeconds % 3600) / 60), s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+function resetTimerButtons() {
+  document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnPause').disabled = true;
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('btnResume').disabled = true;
+}
+function updateTimerUI() {
+  const el = document.getElementById('timerDisplay'), st = document.getElementById('timerStatus');
+  if (timerPaused) { el.classList.add('paused'); st.innerHTML = '⏸ đang tạm dừng...'; }
+  else if (timerRunning) { el.classList.remove('paused'); st.innerHTML = '<span class="dot-live"></span>ĐANG HỌC'; }
+  else { el.classList.remove('paused'); st.innerHTML = '— chưa bắt đầu —'; }
+}
+
+function checkNewDay(today = getTodayStr()) {
+  if (state.lastDate && state.lastDate !== today) {
+    state.dailySmallExchanges = 0;
+  }
+  state.lastDate = today;
+}
+function addMinutes(min, type, note) {
+  const today = getTodayStr(); checkNewDay(today);
+  state.totalMinutes += min;
+  state.totalMinutesAllTime += min;
+  state.pendingMinutes += min;
+  state.todayMinutes += min;
+  state.dayMinutes[today] = (state.dayMinutes[today] || 0) + min;
+  state.sessions.unshift({ time: nowTime(), dur: min, type, note: note || '' });
+  if (state.sessions.length > 150) state.sessions.pop();
+  recalcStreak(); saveState(); renderAll(); checkMilestonesNotice();
+}
+function manualAdjust(type) {
+  const minEl = document.getElementById('adjustMin'), noteEl = document.getElementById('adjustNote');
+  const statusEl = document.getElementById('adjustStatus');
+  const min = parseInt(minEl.value, 10);
+  if (!min || min <= 0) return showToast('Nhập số phút hợp lệ!', 'warning');
+  const note = noteEl.value || '';
+
+  if (type === 'add') {
+    // Clear input immediately so the form never keeps the old number after saving.
+    minEl.value = '';
+    noteEl.value = '';
+    addMinutes(min, 'add', note || `Cộng thủ công ${min} phút`);
+    if (statusEl) statusEl.textContent = `✓ Đã cộng ${min} phút. Nếu đủ mốc, vào tab Đổi & Quay để đổi vé.`;
+  } else {
+    if (min > state.pendingMinutes) return showToast('Không đủ giờ chưa đổi để trừ!', 'warning');
+    minEl.value = '';
+    noteEl.value = '';
+    state.totalMinutes = Math.max(0, state.totalMinutes - min);
+    state.pendingMinutes = Math.max(0, state.pendingMinutes - min);
+    state.sessions.unshift({ time: nowTime(), dur: min, type: 'sub', note: note || `Trừ thủ công ${min} phút` });
+    saveState(); renderAll();
+    if (statusEl) statusEl.textContent = `✓ Đã trừ ${min} phút.`;
+  }
+}
+function checkMilestonesNotice() {
+  // Không hiện popup/toast khi đủ mốc nữa. Người dùng tự vào tab Đổi & Quay để đổi vé.
+}
+
+function exchangeSmallTicket() {
+  checkNewDay();
+  if (state.dailySmallExchanges >= 2) return showToast('Hôm nay đã đổi tối đa 2 vé nhỏ rồi!', 'warning');
+  if (state.pendingMinutes < 120) return showToast('Chưa đủ 120 phút để đổi vé nhỏ.', 'warning');
+  state.pendingMinutes -= 120;
+  state.totalMinutes = Math.max(0, state.totalMinutes - 120);
+  state.smallTickets++;
+  state.dailySmallExchanges++;
+  logRewardAction('ticket', 120, 'Đổi 1 vé quay nhỏ');
+  saveState(); renderAll(); showToast('🎟 Đã đổi 1 vé quay nhỏ! Giờ có thể quay.', 'success');
+}
+function convertSmallToPoints() {
+  checkNewDay();
+  if (state.dailySmallExchanges >= 2) return showToast('Hôm nay đã dùng tối đa 2 lượt nhỏ rồi!', 'warning');
+  if (state.pendingMinutes < 120) return showToast('Chưa đủ 120 phút để đổi điểm.', 'warning');
+  state.pendingMinutes -= 120;
+  state.totalMinutes = Math.max(0, state.totalMinutes - 120);
+  state.bigPoints += 2;
+  state.dailySmallExchanges++;
+  logRewardAction('points', 120, 'Đổi 120 phút → 2 điểm lớn');
+  saveState(); renderAll(); switchTab('spin'); drawWheel(); renderSpinButton(); showToast('⭐ Đã đổi thành 2 điểm lớn.', 'info');
+}
+function exchangeBigTicket(method) {
+  if (method === 'points') {
+    if (state.bigPoints < 10) return showToast('Chưa đủ 10 điểm lớn.', 'warning');
+    state.bigPoints -= 10;
+    state.bigTickets++;
+    logRewardAction('ticket', 0, 'Đổi 10 điểm → 1 vé quay lớn');
+  } else {
+    if (state.pendingMinutes < 600) return showToast('Chưa đủ 600 phút chưa đổi.', 'warning');
+    state.pendingMinutes -= 600;
+    state.totalMinutes = Math.max(0, state.totalMinutes - 600);
+    state.bigTickets++;
+    logRewardAction('ticket', 600, 'Đổi 600 phút → 1 vé quay lớn');
+  }
+  saveState(); renderAll(); switchTab('spin'); drawWheel(); renderSpinButton(); showToast('🏆 Đã đổi 1 vé quay lớn!', 'success');
+}
+function logRewardAction(type, dur, note) {
+  state.sessions.unshift({ time: nowTime(), dur, type, note });
+  if (state.sessions.length > 150) state.sessions.pop();
+}
+
+function setWheelMode(mode) {
+  wheelMode = mode;
+  document.getElementById('modeSmall').classList.toggle('active', mode === 'small');
+  document.getElementById('modeBig').classList.toggle('active', mode === 'big');
+  document.getElementById('wheelCenter').textContent = mode === 'small' ? 'SMALL' : 'BIG';
+  wheelRotation = 0;
+  const canvas = document.getElementById('wheelCanvas');
+  canvas.style.transition = 'none'; canvas.style.transform = 'rotate(0deg)';
+  drawWheel(); renderAll();
+}
+function getBaseWheelOptions() { return wheelMode === 'small' ? state.smallRewardOptions : state.bigRewardOptions; }
+function getWheelOptions() {
+  const base = getBaseWheelOptions().filter(Boolean).filter(o => o !== SPECIAL_DOUBLE_REWARD);
+  return [SPECIAL_DOUBLE_REWARD, ...base];
+}
+function drawWheel() {
+  const canvas = document.getElementById('wheelCanvas'); if (!canvas) return;
+  const ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height, cx = w/2, cy = h/2, r = w/2 - 12;
+  const opts = getWheelOptions().filter(Boolean);
+  ctx.clearRect(0,0,w,h);
+  if (!opts.length) return;
+  const colors = ['#f6c6c7','#f8df9a','#cfe8b5','#b9dcf0','#d9c8f4','#f4c7e3','#ffd8a8','#b8e1d2','#e9d5b7','#c7d2fe'];
+  const slice = Math.PI * 2 / opts.length;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(-Math.PI/2);
+  opts.forEach((opt, i) => {
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,r,i*slice,(i+1)*slice); ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length]; ctx.fill();
+    ctx.strokeStyle = '#fffaf3'; ctx.lineWidth = 4; ctx.stroke();
+    ctx.save(); ctx.rotate(i*slice + slice/2); ctx.textAlign = 'right'; ctx.fillStyle = '#4a4036';
+    ctx.font = '700 28px Space Mono, monospace';
+    wrapWheelText(ctx, opt, r - 28, 8, Math.max(12, Math.min(26, 260 / opts.length)));
+    ctx.restore();
+  });
+  ctx.restore();
+}
+function wrapWheelText(ctx, text, x, y, maxChars) {
+  const clean = String(text).trim();
+  const lines = [];
+  let remaining = clean;
+  while (remaining.length > maxChars && lines.length < 2) {
+    let cut = remaining.lastIndexOf(' ', maxChars);
+    if (cut < 5) cut = maxChars;
+    lines.push(remaining.slice(0, cut));
+    remaining = remaining.slice(cut).trim();
+  }
+  lines.push(remaining.length > maxChars ? remaining.slice(0, maxChars-1) + '…' : remaining);
+  const startY = y - (lines.length-1)*15;
+  lines.forEach((line, idx) => ctx.fillText(line, x, startY + idx*30));
+}
+function renderSpinButton() {
+  const spinBtn = document.getElementById('spinBtn');
+  if (!spinBtn) return;
+  const isFree = state.freeSpinMode === wheelMode;
+  const tickets = wheelMode === 'small' ? (state.smallTickets || 0) : (state.bigTickets || 0);
+  if (isSpinning) {
+    spinBtn.disabled = true;
+    spinBtn.textContent = '🎡 Đang quay...';
+    return;
+  }
+  spinBtn.disabled = !isFree && tickets <= 0;
+  spinBtn.textContent = isFree
+    ? `🔁 Quay lại miễn phí x${state.rewardMultiplier || 2}`
+    : (wheelMode === 'small' ? `🎰 Quay ngẫu nhiên (${tickets} vé)` : `🎰 Quay ngẫu nhiên (${tickets} vé)`);
+}
+
+function spinWheel() {
+  const resultEl = document.getElementById('spinResult');
+  const canvas = document.getElementById('wheelCanvas');
+
+  if (isSpinning) return;
+  if (!canvas) {
+    if (resultEl) resultEl.innerHTML = '⚠️ Không tìm thấy wheel canvas. Hãy tải lại trang.';
+    return;
+  }
+
+  drawWheel();
+  const opts = getWheelOptions().filter(Boolean);
+  if (!opts.length) return showToast('Wheel chưa có phần thưởng. Vào Cài thưởng để thêm.', 'warning');
+
+  const modeAtStart = wheelMode;
+  const freeSpin = state.freeSpinMode === modeAtStart;
+  const ticketKey = modeAtStart === 'small' ? 'smallTickets' : 'bigTickets';
+
+  state.sessions = Array.isArray(state.sessions) ? state.sessions : [];
+  state.spinHistory = Array.isArray(state.spinHistory) ? state.spinHistory : [];
+  state.shoppingHistory = Array.isArray(state.shoppingHistory) ? state.shoppingHistory : [];
+
+  if (!freeSpin && ((state[ticketKey] || 0) <= 0)) {
+    renderSpinButton();
+    return showToast(modeAtStart === 'small' ? 'Bạn chưa có vé quay nhỏ. Hãy đổi vé trước.' : 'Bạn chưa có vé quay lớn. Hãy đổi vé trước.', 'warning');
+  }
+
+  if (!freeSpin) state[ticketKey] = Math.max(0, (state[ticketKey] || 0) - 1);
+  else state.freeSpinMode = '';
+
+  const winnerIndex = Math.floor(Math.random() * opts.length);
+  const sliceDeg = 360 / opts.length;
+  const targetCenter = winnerIndex * sliceDeg + sliceDeg / 2;
+  const currentNormalized = ((wheelRotation % 360) + 360) % 360;
+  const desiredNormalized = (360 - targetCenter + 360) % 360;
+  const deltaToTarget = (desiredNormalized - currentNormalized + 360) % 360;
+  const extraTurns = 6 + Math.floor(Math.random() * 3);
+  const startRotation = wheelRotation;
+  const endRotation = wheelRotation + extraTurns * 360 + deltaToTarget;
+  const duration = 3800;
+  const startedAt = performance.now();
+
+  isSpinning = true;
+  if (resultEl) resultEl.innerHTML = 'Đang quay...';
+  canvas.style.transition = 'none';
+  renderSpinButton();
+  saveState();
+
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+  function finishSpin() {
+    try {
+      wheelRotation = endRotation;
+      canvas.style.transform = `rotate(${wheelRotation}deg)`;
+
+      const reward = opts[winnerIndex];
+      const multiplier = Math.max(1, state.rewardMultiplier || 1);
+
+      if (reward === SPECIAL_DOUBLE_REWARD) {
+        state.freeSpinMode = modeAtStart;
+        state.rewardMultiplier = Math.max(2, multiplier * 2);
+        state.spinHistory.unshift({ time: nowTime(), mode: modeAtStart, reward, date: getTodayStr(), multiplier: state.rewardMultiplier });
+        state.sessions.unshift({ time: nowTime(), dur: 0, type: 'reward', note: `🔁 Trúng quay lại miễn phí + x${state.rewardMultiplier} thưởng` });
+        if (resultEl) resultEl.innerHTML = `🔁 Bạn trúng <strong>Quay lại + x${state.rewardMultiplier}</strong>! Bấm quay lần nữa, không tốn vé.`;
+        showToast(`🔁 Được quay lại miễn phí, thưởng tiếp theo x${state.rewardMultiplier}!`, 'warning');
+      } else {
+        const moneyAdded = applyShoppingReward(reward, multiplier);
+        const displayReward = multiplier > 1 ? `${reward} ×${multiplier}` : reward;
+        state.rewardMultiplier = 1;
+        state.spinHistory.unshift({ time: nowTime(), mode: modeAtStart, reward: displayReward, date: getTodayStr(), moneyAdded });
+        state.sessions.unshift({ time: nowTime(), dur: 0, type: 'reward', note: `${modeAtStart === 'small' ? '🎡' : '🏆'} Trúng: ${displayReward}${moneyAdded ? ` · +${formatMoneyK(moneyAdded)} quỹ shopping` : ''}` });
+        if (resultEl) resultEl.innerHTML = `🎉 Bạn trúng: <strong>${escapeHtml(displayReward)}</strong>${moneyAdded ? `<br>🛍️ Đã cộng <strong>${formatMoneyK(moneyAdded)}</strong> vào quỹ shopping.` : ''}`;
+        showToast(moneyAdded ? `🛍️ +${formatMoneyK(moneyAdded)} vào quỹ shopping!` : `🎉 Trúng: ${displayReward}`, 'success');
+      }
+
+      if (state.sessions.length > 150) state.sessions.length = 150;
+      if (state.spinHistory.length > 150) state.spinHistory.length = 150;
+      saveState();
+    } catch (err) {
+      console.error('Spin result error:', err);
+      if (resultEl) resultEl.innerHTML = '⚠️ Wheel đã quay xong nhưng có lỗi khi ghi kết quả. Mình đã mở nút quay lại.';
+      showToast('Wheel bị lỗi khi ghi kết quả, nhưng đã mở nút quay lại.', 'warning');
+    } finally {
+      isSpinning = false;
+      renderAll();
+      renderSpinButton();
+    }
+  }
+
+  function animate(now) {
+    const t = Math.min(1, (now - startedAt) / duration);
+    wheelRotation = startRotation + (endRotation - startRotation) * easeOutCubic(t);
+    canvas.style.transform = `rotate(${wheelRotation}deg)`;
+    if (t < 1) requestAnimationFrame(animate);
+    else finishSpin();
+  }
+
+  requestAnimationFrame(animate);
+}
+
+function applyShoppingReward(reward, multiplier = 1) {
+  const parsed = parseShoppingAmount(reward);
+  if (!parsed) return 0;
+  const amount = parsed * Math.max(1, multiplier || 1);
+  state.shoppingFund = Math.max(0, (state.shoppingFund || 0) + amount);
+  state.shoppingHistory.unshift({ time: nowTime(), date: getTodayStr(), type: 'add', amount, note: multiplier > 1 ? `Wheel x${multiplier}: ${reward}` : `Wheel: ${reward}` });
+  if (state.shoppingHistory.length > 120) state.shoppingHistory.pop();
+  return amount;
+}
+function parseShoppingAmount(text) {
+  const lower = String(text || '').toLowerCase();
+  if (!/(shopping|shop|quỹ|tích)/i.test(lower)) return 0;
+  const m = lower.match(/(?:\+|cộng)?\s*(\d+(?:[\.,]\d+)?)\s*(k|nghìn|ngàn|000|₫|vnd)?/i);
+  if (!m) return 0;
+  return Math.round(parseFloat(m[1].replace(',', '.')));
+}
+function manualShopping(type) {
+  const amountEl = document.getElementById('shoppingAmount');
+  const noteEl = document.getElementById('shoppingNote');
+  const amount = parseInt(amountEl.value, 10);
+  if (!amount || amount <= 0) return showToast('Nhập số tiền hợp lệ theo đơn vị k.', 'warning');
+  const note = noteEl.value || (type === 'add' ? 'Cộng quỹ thủ công' : 'Đã tiêu shopping');
+  if (type === 'spend') {
+    if (amount > (state.shoppingFund || 0)) return showToast('Quỹ shopping chưa đủ để trừ khoản này.', 'warning');
+    state.shoppingFund -= amount;
+    state.shoppingHistory.unshift({ time: nowTime(), date: getTodayStr(), type: 'spend', amount, note });
+    showToast(`－ Đã trừ ${formatMoneyK(amount)} khỏi quỹ shopping.`, 'info');
+  } else {
+    state.shoppingFund = (state.shoppingFund || 0) + amount;
+    state.shoppingHistory.unshift({ time: nowTime(), date: getTodayStr(), type: 'add', amount, note });
+    showToast(`＋ Đã cộng ${formatMoneyK(amount)} vào quỹ shopping.`, 'success');
+  }
+  if (state.shoppingHistory.length > 120) state.shoppingHistory.pop();
+  state.sessions.unshift({ time: nowTime(), dur: 0, type: type === 'spend' ? 'sub' : 'add', note: `${type === 'spend' ? '🛍️ Tiêu' : '🛍️ Cộng'} quỹ: ${formatMoneyK(amount)} · ${note}` });
+  amountEl.value = ''; noteEl.value = '';
+  saveState(); renderAll();
+}
+function renderShoppingHistory() {
+  const list = document.getElementById('shoppingHistoryList'); if (!list) return;
+  const history = state.shoppingHistory || [];
+  if (!history.length) { list.innerHTML = '<li><span>Chưa có lịch sử quỹ.</span><strong>0k</strong></li>'; return; }
+  list.innerHTML = history.slice(0, 8).map(item => `
+    <li>
+      <span>${escapeHtml(item.date || '')} ${escapeHtml(item.note || '')}</span>
+      <strong class="${item.type === 'spend' ? 'money-minus' : 'money-plus'}">${item.type === 'spend' ? '−' : '+'}${formatMoneyK(item.amount || 0)}</strong>
+    </li>`).join('');
+}
+
+function saveRewardEditors() {
+  const small = parseRewardLines(document.getElementById('smallRewardsEditor').value);
+  const big = parseRewardLines(document.getElementById('bigRewardsEditor').value);
+  const streakEditor = document.getElementById('streakRewardsEditor');
+  const streakSettings = streakEditor ? parseStreakRewardLines(streakEditor.value) : normalizeStreakRewardSettings(state.streakRewardSettings || DEFAULT_STREAK_REWARDS);
+  if (small.length < 2 || big.length < 2) return showToast('Mỗi wheel cần ít nhất 2 phần thưởng.', 'warning');
+  if (streakSettings.length < 1) return showToast('Cần ít nhất 1 mốc thưởng streak theo dạng: số ngày | phần thưởng.', 'warning');
+  state.smallRewardOptions = small;
+  state.bigRewardOptions = big;
+  state.streakRewardSettings = streakSettings;
+  recalcStreak();
+  syncRewardEditors();
+  saveState();
+  drawWheel();
+  renderAll();
+  renderSpinButton();
+  showToast('Đã lưu phần thưởng cho wheel và streak.', 'success');
+}
+function resetRewardEditors() {
+  if (!confirm('Khôi phục phần thưởng mặc định cho wheel và streak?')) return;
+  state.smallRewardOptions = [...DEFAULT_SMALL_REWARDS]; state.bigRewardOptions = [...DEFAULT_BIG_REWARDS]; state.streakRewardSettings = [...DEFAULT_STREAK_REWARDS];
+  recalcStreak(); syncRewardEditors(); saveState(); drawWheel(); renderAll(); showToast('Đã khôi phục mặc định.', 'info');
+}
+function parseRewardLines(text) { return text.split('\n').map(s => s.trim()).filter(Boolean).filter(s => s !== SPECIAL_DOUBLE_REWARD).slice(0, 20); }
+function normalizeStreakRewardSettings(list) {
+  return (Array.isArray(list) ? list : [])
+    .map(item => {
+      if (typeof item === 'string') {
+        const parts = item.split('|');
+        return { days: parseInt(parts[0], 10), reward: (parts.slice(1).join('|') || '').trim() };
+      }
+      return { days: parseInt(item.days, 10), reward: String(item.reward || '').trim() };
+    })
+    .filter(item => item.days > 0 && item.reward)
+    .sort((a,b) => a.days - b.days)
+    .slice(0, 20);
+}
+function parseStreakRewardLines(text) {
+  return normalizeStreakRewardSettings(text.split('\n').map(line => {
+    const parts = line.split('|');
+    return { days: parseInt(parts[0], 10), reward: parts.slice(1).join('|').trim() };
+  }));
+}
+function streakSettingsToText(list) {
+  return normalizeStreakRewardSettings(list).map(item => `${item.days} | ${item.reward}`).join('\n');
+}
+function syncRewardEditors() {
+  const small = document.getElementById('smallRewardsEditor'); if (small) small.value = state.smallRewardOptions.join('\n');
+  const big = document.getElementById('bigRewardsEditor'); if (big) big.value = state.bigRewardOptions.join('\n');
+  const streak = document.getElementById('streakRewardsEditor'); if (streak) streak.value = streakSettingsToText(state.streakRewardSettings || DEFAULT_STREAK_REWARDS);
+}
+
+function recalcStreak() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const qualified = new Set(Object.entries(state.dayMinutes || {}).filter(([,m]) => m >= 60).map(([d]) => d));
+  let streak = 0;
+  for (let i=0; i<120; i++) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const ds = dateToStr(d);
+    if (qualified.has(ds)) streak++; else break;
+  }
+  const prev = state.streak || 0;
+  state.streak = streak;
+  state.streakDays = [...qualified].sort();
+  const milestones = normalizeStreakRewardSettings(state.streakRewardSettings || DEFAULT_STREAK_REWARDS).map(item => item.days);
+  milestones.forEach(m => {
+    if (streak >= m && !state.streakRewards.includes(m)) {
+      state.streakRewards.push(m);
+      setTimeout(() => showStreakReward(m), 500);
+    }
+  });
+}
+function showStreakReward(days) {
+  const setting = normalizeStreakRewardSettings(state.streakRewardSettings || DEFAULT_STREAK_REWARDS).find(item => item.days === days);
+  document.getElementById('streakModalTitle').textContent = days >= 30 ? `🏆 Streak ${days} ngày!` : `🔥 Streak ${days} ngày!`;
+  document.getElementById('streakModalDesc').textContent = setting ? setting.reward : 'Bạn đã duy trì streak tốt!';
+  document.getElementById('overlayStreak').classList.remove('hidden');
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function renderAll() {
+  const today = getTodayStr(); checkNewDay(today);
+  document.getElementById('totalHours').textContent = (state.totalMinutesAllTime / 60).toFixed(1);
+  document.getElementById('todayMinutes').textContent = state.todayMinutes;
+  document.getElementById('streakCount').textContent = state.streak;
+  document.getElementById('availableHours').textContent = (state.pendingMinutes / 60).toFixed(1);
+  const fundText = formatMoneyK(state.shoppingFund || 0);
+  const topFund = document.getElementById('shoppingFundTop'); if (topFund) topFund.textContent = fundText;
+  const fundBalance = document.getElementById('shoppingFundBalance'); if (fundBalance) fundBalance.textContent = fundText;
+  document.getElementById('smallTickets').textContent = state.smallTickets || 0;
+  document.getElementById('bigTickets').textContent = state.bigTickets || 0;
+
+  const smallProgress = state.pendingMinutes % 120;
+  const pct2 = Math.min(100, (smallProgress / 120) * 100);
+  document.getElementById('bar2h').style.width = pct2 + '%';
+  document.getElementById('pct2h').textContent = Math.round(pct2) + '%';
+  document.getElementById('chip2hStatus').textContent = `${smallProgress} / 120 phút`;
+
+  const bigProgress = state.pendingMinutes % 600;
+  const pct10 = Math.min(100, (bigProgress / 600) * 100);
+  document.getElementById('bar10h').style.width = pct10 + '%';
+  document.getElementById('pct10h').textContent = Math.round(pct10) + '%';
+  document.getElementById('chip10hStatus').textContent = `${bigProgress} / 600 phút (${state.bigPoints} điểm)`;
+
+  const dailyPct = Math.min(100, ((state.dailySmallExchanges || 0) / 2) * 100);
+  document.getElementById('barDaily').style.width = dailyPct + '%';
+  document.getElementById('pctDaily').textContent = `${state.dailySmallExchanges || 0}/2`;
+  document.getElementById('dailyExchangeText').textContent = `${state.dailySmallExchanges || 0}/2`;
+
+  renderStreakGrid(); renderSessionList(); renderStreakRewards(); renderShoppingHistory();
+  document.getElementById('todayBadge').textContent = new Date().toLocaleDateString('vi-VN', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' }).toUpperCase();
+  if (!isSpinning) renderSpinButton();
+}
+function renderStreakGrid() {
+  const grid = document.getElementById('streakGrid'); if (!grid) return;
+  const dayMinutes = state.dayMinutes || {};
+  const qualifiedDays = Object.entries(dayMinutes).filter(([,m]) => m >= 60).map(([d]) => d).sort();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const view = new Date(today.getFullYear(), today.getMonth() + streakCalendarOffset, 1);
+  const year = view.getFullYear();
+  const month = view.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startBlank = (firstDay.getDay() + 6) % 7; // Monday first
+  const monthKey = `${year}-${pad(month + 1)}`;
+  const monthQualified = qualifiedDays.filter(d => d.startsWith(monthKey)).length;
+  const totalQualified = qualifiedDays.length;
+  const bestStreak = calcLongestStreak(qualifiedDays);
+
+  const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  setText('calendarCurrentStreak', `${state.streak || 0} ngày`);
+  setText('calendarBestStreak', `${bestStreak} ngày`);
+  setText('calendarTotalQualified', `${totalQualified} ngày`);
+  setText('calendarMonthQualified', `${monthQualified} ngày`);
+  setText('calendarMonthTitle', view.toLocaleDateString('vi-VN', { month:'long', year:'numeric' }).replace(/^./, c => c.toUpperCase()));
+
+  const weekdays = ['T2','T3','T4','T5','T6','T7','CN'];
+  grid.innerHTML = weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('');
+  for (let i = 0; i < startBlank; i++) grid.insertAdjacentHTML('beforeend', '<div class="calendar-day empty"></div>');
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const d = new Date(year, month, day);
+    const ds = dateToStr(d);
+    const mins = dayMinutes[ds] || 0;
+    const isQualified = mins >= 60;
+    const hasStudied = mins > 0 && mins < 60;
+    const isToday = ds === getTodayStr();
+    const classes = ['calendar-day'];
+    if (isQualified) classes.push('qualified');
+    if (hasStudied) classes.push('studied');
+    if (isToday) classes.push('today');
+    const minuteText = mins ? `${mins}p` : '—';
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="${classes.join(' ')}" title="${ds} · ${mins} phút">
+        <div class="calendar-day-number">${day}</div>
+        <div class="calendar-day-minutes">${minuteText}</div>
+      </div>`);
+  }
+}
+function changeStreakMonth(delta) {
+  if (delta === 0) streakCalendarOffset = 0;
+  else streakCalendarOffset += delta;
+  renderStreakGrid();
+}
+function calcLongestStreak(days) {
+  if (!days || !days.length) return 0;
+  const set = new Set(days);
+  let best = 0;
+  for (const ds of days) {
+    const d = parseDateStr(ds);
+    const prev = new Date(d); prev.setDate(prev.getDate() - 1);
+    if (set.has(dateToStr(prev))) continue;
+    let len = 0;
+    const cur = new Date(d);
+    while (set.has(dateToStr(cur))) { len++; cur.setDate(cur.getDate() + 1); }
+    best = Math.max(best, len);
+  }
+  return best;
+}
+function parseDateStr(ds) {
+  const [y,m,d] = ds.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function renderSessionList() {
+  const list = document.getElementById('sessionList'); if (!list) return;
+  if (!state.sessions || !state.sessions.length) { list.innerHTML = '<li><div class="empty-state">Chưa có dữ liệu.</div></li>'; return; }
+  list.innerHTML = state.sessions.slice(0, 80).map(s => `
+    <li class="session-item">
+      <span class="si-time">${escapeHtml(s.time)}</span>
+      <span class="si-dur">${s.dur ? (s.type === 'sub' ? '－' : '＋') + formatDur(s.dur) : '🎁'}</span>
+      <span class="si-type ${safeType(s.type)}">${escapeHtml(s.note || s.type)}</span>
+    </li>`).join('');
+}
+function renderStreakRewards() {
+  const area = document.getElementById('streakRewardArea'); if (!area) return;
+  const settings = normalizeStreakRewardSettings(state.streakRewardSettings || DEFAULT_STREAK_REWARDS);
+  if (!settings.length) { area.innerHTML = '<div class="empty-state">Chưa có mốc thưởng streak. Vào Cài thưởng để thêm.</div>'; return; }
+  const current = state.streak || 0;
+  const achieved = new Set(state.streakRewards || []);
+  const next = settings.find(item => current < item.days);
+  const completedCount = settings.filter(item => current >= item.days || achieved.has(item.days)).length;
+  const nextText = next ? `${next.days} ngày · còn ${Math.max(0, next.days - current)} ngày` : 'Đã đạt hết mốc';
+  area.innerHTML = `
+    <div class="streak-roadmap-header">
+      <div class="roadmap-stat"><div class="label">Hiện tại</div><div class="value">${current} ngày</div></div>
+      <div class="roadmap-stat"><div class="label">Mốc tiếp theo</div><div class="value" style="font-size:1.05rem">${escapeHtml(nextText)}</div></div>
+      <div class="roadmap-stat"><div class="label">Đã đạt</div><div class="value">${completedCount}/${settings.length}</div></div>
+    </div>
+    <div class="streak-reward-list">${settings.map(item => {
+      const done = current >= item.days || achieved.has(item.days);
+      const isNext = next && item.days === next.days;
+      const pct = Math.min(100, Math.round((current / item.days) * 100));
+      const remain = Math.max(0, item.days - current);
+      const status = done ? 'Đã đạt' : (isNext ? `Mốc tiếp theo · còn ${remain} ngày` : 'Chưa tới');
+      const title = done ? 'Đã mở thưởng' : (isNext ? 'Đang hướng tới' : 'Mốc sau');
+      return `<div class="streak-reward-item ${done ? 'done' : ''} ${isNext ? 'next' : ''}">
+        <div class="streak-reward-days"><span class="num">${done ? '✓' : item.days}</span><span class="unit">${done ? item.days + ' ngày' : 'ngày'}</span></div>
+        <div class="streak-reward-main">
+          <div class="streak-reward-title">${title}<span class="streak-reward-status">${status}</span></div>
+          <div class="streak-reward-desc">${escapeHtml(item.reward)}</div>
+        </div>
+        <div class="streak-reward-progress-wrap">
+          <div class="streak-reward-progress"><span style="width:${pct}%"></span></div>
+          <div class="streak-reward-percent">${pct}%</div>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+}
+
+function resetDaily() {
+  const today = getTodayStr();
+  state.todayMinutes = 0;
+  state.dailySmallExchanges = 0;
+  if (!state.dayMinutes) state.dayMinutes = {};
+  delete state.dayMinutes[today];
+  state.sessions.unshift({ time: nowTime(), dur: 0, type: 'sub', note: 'Reset dữ liệu hôm nay' });
+  recalcStreak();
+  saveState();
+  renderAll();
+  showToast('Đã reset dữ liệu hôm nay.', 'info');
+}
+function resetAllData() {
+  const btn = document.getElementById('resetAllBtn');
+  if (!resetAllArmed) {
+    resetAllArmed = true;
+    if (btn) btn.textContent = 'Bấm lần nữa để reset';
+    showToast('Bấm “Reset tất cả” lần nữa trong 5 giây để xác nhận.', 'warning');
+    setTimeout(() => {
+      resetAllArmed = false;
+      const b = document.getElementById('resetAllBtn');
+      if (b) b.textContent = '⚠ Reset tất cả';
+    }, 5000);
+    return;
+  }
+  resetAllArmed = false;
+  try { localStorage.removeItem('srs_state'); } catch(e) {}
+  state = freshDefaultState();
+  timerSeconds = 0;
+  timerRunning = false;
+  timerPaused = false;
+  isSpinning = false;
+  wheelRotation = 0;
+  streakCalendarOffset = 0;
+  clearInterval(timerInterval);
+  resetTimerButtons();
+  const timerDisplay = document.getElementById('timerDisplay');
+  const timerStatus = document.getElementById('timerStatus');
+  if (timerDisplay) timerDisplay.textContent = '00:00:00';
+  if (timerStatus) timerStatus.innerHTML = '— chưa bắt đầu —';
+  saveState();
+  syncRewardEditors();
+  setWheelMode('small');
+  renderAll();
+  drawWheel();
+  const btn2 = document.getElementById('resetAllBtn');
+  if (btn2) btn2.textContent = '⚠ Reset tất cả';
+  showToast('Đã reset toàn bộ dữ liệu.', 'warning');
+}
+function confirmReset() { resetAllData(); }
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const order = ['timer','spin','progress','rewards','history','rules'];
+  const idx = order.indexOf(tab);
+  if (idx >= 0) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
+  if (tab === 'rewards') syncRewardEditors();
+  if (tab === 'spin') { drawWheel(); renderAll(); }
+}
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg; container.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, 3200);
+}
+function pad(n) { return String(n).padStart(2, '0'); }
+function getTodayStr() { return dateToStr(new Date()); }
+function dateToStr(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function nowTime() { return new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}); }
+function formatDur(min) { if (min < 60) return `${min}p`; const h = Math.floor(min/60), m = min%60; return m ? `${h}h${m}p` : `${h}h`; }
+function formatMoneyK(amount) { return `${Math.round(Number(amount) || 0)}k`; }
+function escapeHtml(str) { return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function safeType(t) { return ['add','sub','session'].includes(t) ? t : 'session'; }
+
+document.addEventListener('DOMContentLoaded', () => { checkNewDay(); recalcStreak(); syncRewardEditors(); setWheelMode('small'); renderAll(); });
+</script>
+</body>
+</html>

@@ -1172,6 +1172,7 @@
     <button class="tab-btn" onclick="switchTab('progress')">📊 Tiến độ</button>
     <button class="tab-btn" onclick="switchTab('rewards')">✏️ Cài thưởng</button>
     <button class="tab-btn" onclick="switchTab('history')">📋 Lịch sử</button>
+    <button class="tab-btn" onclick="switchTab('sync')">☁️ Sync</button>
     <button class="tab-btn" onclick="switchTab('rules')">📖 Luật</button>
   </div>
 
@@ -1355,6 +1356,53 @@
     </div>
   </div>
 
+  <div class="tab-panel" id="tab-sync">
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:var(--accent3)"></span>SYNC VỚI GOOGLE SHEETS</div>
+      <p style="font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:14px">
+        Dữ liệu lưu trên trình duyệt (localStorage). Dùng Google Apps Script để backup tự động lên Sheets — không cần OAuth, chỉ paste URL webhook.
+      </p>
+      <div class="rule-box" style="margin-bottom:14px;font-size:.8rem">
+        <strong>Cách thiết lập (1 lần duy nhất):</strong><br/>
+        1. Vào <a href="https://script.google.com" target="_blank" style="color:var(--accent3)">script.google.com</a> → New project<br/>
+        2. Xóa code mặc định, paste code từ ô bên dưới vào<br/>
+        3. <strong>Deploy → New deployment → Web app → Who has access: Anyone → Deploy</strong><br/>
+        4. Copy URL → paste vào ô Webhook URL bên dưới → Lưu URL
+      </div>
+      <div class="section-title" style="margin-bottom:6px"><span class="dot" style="background:var(--success)"></span>CODE APPS SCRIPT</div>
+      <div style="position:relative;margin-bottom:14px">
+        <textarea id="appsScriptCode" readonly style="width:100%;min-height:190px;resize:vertical;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:12px;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.5;outline:none"></textarea>
+        <button class="btn sm info" style="position:absolute;top:8px;right:8px;z-index:1" onclick="copyAppsScript()">📋 Copy</button>
+      </div>
+      <div class="section-title" style="margin-bottom:6px"><span class="dot" style="background:var(--accent2)"></span>WEBHOOK URL</div>
+      <div class="adjust-row" style="margin-bottom:10px">
+        <div class="input-group" style="flex:1"><input type="url" id="webhookUrl" placeholder="https://script.google.com/macros/s/.../exec"/></div>
+      </div>
+      <div class="controls-grid" style="margin-bottom:8px">
+        <button class="btn primary" onclick="saveWebhookUrl()">💾 Lưu URL</button>
+        <button class="btn info" onclick="testWebhook()">🔗 Test kết nối</button>
+      </div>
+      <div id="syncStatus" style="font-size:.78rem;color:var(--muted);min-height:18px;margin-bottom:14px"></div>
+      <hr class="divider"/>
+      <div class="section-title" style="margin-bottom:8px"><span class="dot" style="background:var(--accent2)"></span>BACKUP & RESTORE</div>
+      <div class="controls-grid">
+        <button class="btn warning" onclick="syncToSheets()">📤 Sync lên Sheets ngay</button>
+        <button class="btn info" onclick="exportJSON()">💾 Xuất JSON</button>
+      </div>
+      <div style="margin-top:10px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;cursor:pointer;user-select:none">
+          <input type="checkbox" id="autoSyncToggle" onchange="toggleAutoSync()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)"/>
+          Tự động sync sau mỗi phiên học
+        </label>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:var(--danger)"></span>IMPORT JSON</div>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:10px;line-height:1.6">Khôi phục từ file JSON đã export. <strong>Ghi đè toàn bộ dữ liệu hiện tại!</strong></p>
+      <input type="file" id="importFile" accept=".json" onchange="importJSON(event)" style="font-size:.78rem;color:var(--text);padding:6px 0"/>
+    </div>
+  </div>
+
   <div class="tab-panel" id="tab-rules">
     <div class="rule-box"><strong>📌 Phiên học hợp lệ</strong><br/><span class="tag tag-blue">ĐIỀU KIỆN</span> Tối thiểu <strong>25 phút</strong> + có tập trung. Nếu vừa học vừa lướt nhiều → <strong>không tính</strong>.</div>
     <div class="rule-box"><strong>🎡 Cơ chế mới</strong><br/><span class="tag tag-green">KHÔNG POPUP</span> Đủ mốc sẽ không tự bật chọn thưởng. Bạn tự vào tab <strong>Đổi & Quay</strong> để đổi vé.</div>
@@ -1504,7 +1552,11 @@ function stopTimer() {
   const minutes = Math.floor(timerSeconds / 60);
   resetTimerButtons();
   if (minutes < 25) showToast('⚠ Phiên học dưới 25 phút — không tính!', 'warning');
-  else { addMinutes(minutes, 'session', `Phiên học ${formatDur(minutes)}`); showToast(`✓ Đã ghi nhận ${formatDur(minutes)}!`, 'success'); }
+  else {
+    addMinutes(minutes, 'session', `Phiên học ${formatDur(minutes)}`);
+    showToast(`✓ Đã ghi nhận ${formatDur(minutes)}!`, 'success');
+    maybeAutoSync();
+  }
   timerSeconds = 0;
   document.getElementById('timerDisplay').textContent = '00:00:00';
   document.getElementById('timerStatus').innerHTML = '— chưa bắt đầu —';
@@ -1529,20 +1581,26 @@ function updateTimerUI() {
 
 function checkNewDay(today = getTodayStr()) {
   if (state.lastDate && state.lastDate !== today) {
+    // Ngày mới: reset counter hằng ngày
     state.dailySmallExchanges = 0;
   }
   state.lastDate = today;
+  // dayMinutes là nguồn sự thật duy nhất; todayMinutes luôn sync từ đây
+  state.todayMinutes = (state.dayMinutes || {})[today] || 0;
 }
 function addMinutes(min, type, note) {
-  const today = getTodayStr(); checkNewDay(today);
+  if (!state.dayMinutes) state.dayMinutes = {};
+  const today = getTodayStr();
+  checkNewDay(today);
   state.totalMinutes += min;
   state.totalMinutesAllTime += min;
   state.pendingMinutes += min;
-  state.todayMinutes += min;
+  // dayMinutes là source of truth; todayMinutes sẽ được sync bởi checkNewDay
   state.dayMinutes[today] = (state.dayMinutes[today] || 0) + min;
+  state.todayMinutes = state.dayMinutes[today];
   state.sessions.unshift({ time: nowTime(), dur: min, type, note: note || '' });
   if (state.sessions.length > 150) state.sessions.pop();
-  recalcStreak(); saveState(); renderAll(); checkMilestonesNotice();
+  recalcStreak(); saveState(); renderAll();
 }
 function manualAdjust(type) {
   const minEl = document.getElementById('adjustMin'), noteEl = document.getElementById('adjustNote');
@@ -1925,7 +1983,8 @@ function renderAll() {
   document.getElementById('pct2h').textContent = Math.round(pct2) + '%';
   document.getElementById('chip2hStatus').textContent = `${smallProgress} / 120 phút`;
 
-  const bigProgress = state.pendingMinutes % 600;
+  // 10h dùng totalMinutes (chỉ bị trừ khi đổi vé lớn), không dùng pendingMinutes
+  const bigProgress = state.totalMinutes % 600;
   const pct10 = Math.min(100, (bigProgress / 600) * 100);
   document.getElementById('bar10h').style.width = pct10 + '%';
   document.getElementById('pct10h').textContent = Math.round(pct10) + '%';
@@ -2057,10 +2116,11 @@ function renderStreakRewards() {
 
 function resetDaily() {
   const today = getTodayStr();
-  state.todayMinutes = 0;
-  state.dailySmallExchanges = 0;
   if (!state.dayMinutes) state.dayMinutes = {};
   delete state.dayMinutes[today];
+  state.todayMinutes = 0;
+  state.dailySmallExchanges = 0;
+  state.lastDate = today;
   state.sessions.unshift({ time: nowTime(), dur: 0, type: 'sub', note: 'Reset dữ liệu hôm nay' });
   recalcStreak();
   saveState();
@@ -2107,12 +2167,168 @@ function resetAllData() {
 function confirmReset() { resetAllData(); }
 function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  const order = ['timer','spin','progress','rewards','history','rules'];
+  const order = ['timer','spin','progress','rewards','history','sync','rules'];
   const idx = order.indexOf(tab);
   if (idx >= 0) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
   if (tab === 'rewards') syncRewardEditors();
   if (tab === 'spin') { drawWheel(); renderAll(); }
+  if (tab === 'sync') initSyncTab();
+}
+
+// ═══════════════════════════════════════
+// GOOGLE SHEETS SYNC
+// ═══════════════════════════════════════
+const APPS_SCRIPT_CODE = `// Paste toàn bộ code này vào Google Apps Script
+// Sau đó: Deploy → New deployment → Web app → Anyone → Deploy
+
+const SHEET_NAME = 'SRS_Data';
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      sheet = ss.insertSheet(SHEET_NAME);
+      sheet.appendRow(['Thời gian sync','Tổng phút (all-time)','Phút chưa đổi',
+        'Phút hiện tại','Streak','Điểm lớn','Vé nhỏ','Vé lớn',
+        'Quỹ shopping (k)','Vé nhỏ hôm nay','Phút hôm nay','Ngày học (JSON)','Streak rewards']);
+    }
+    sheet.appendRow([
+      new Date().toLocaleString('vi-VN'),
+      data.totalMinutesAllTime || 0,
+      data.pendingMinutes || 0,
+      data.totalMinutes || 0,
+      data.streak || 0,
+      data.bigPoints || 0,
+      data.smallTickets || 0,
+      data.bigTickets || 0,
+      data.shoppingFund || 0,
+      data.dailySmallExchanges || 0,
+      data.todayMinutes || 0,
+      JSON.stringify(data.dayMinutes || {}),
+      JSON.stringify(data.streakRewards || [])
+    ]);
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet() {
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true, msg: 'SRS webhook ready' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+function initSyncTab() {
+  const codeEl = document.getElementById('appsScriptCode');
+  if (codeEl && !codeEl.value) codeEl.value = APPS_SCRIPT_CODE;
+  const urlEl = document.getElementById('webhookUrl');
+  if (urlEl) urlEl.value = localStorage.getItem('srs_webhook_url') || '';
+  const autoEl = document.getElementById('autoSyncToggle');
+  if (autoEl) autoEl.checked = localStorage.getItem('srs_auto_sync') === '1';
+  const lastSync = localStorage.getItem('srs_last_sync');
+  if (lastSync) setSyncStatus('Lần sync cuối: ' + lastSync);
+}
+function copyAppsScript() {
+  const val = document.getElementById('appsScriptCode')?.value || '';
+  navigator.clipboard?.writeText(val).then(() => showToast('✓ Đã copy code!', 'success')).catch(() => {
+    document.getElementById('appsScriptCode').select();
+    document.execCommand('copy');
+    showToast('✓ Đã copy!', 'success');
+  });
+}
+function saveWebhookUrl() {
+  const url = (document.getElementById('webhookUrl')?.value || '').trim();
+  if (!url) return showToast('Nhập URL webhook trước!', 'warning');
+  if (!url.startsWith('https://script.google.com')) return showToast('URL phải bắt đầu bằng https://script.google.com', 'warning');
+  localStorage.setItem('srs_webhook_url', url);
+  showToast('✓ Đã lưu webhook URL!', 'success');
+  setSyncStatus('✓ URL đã lưu. Bấm "Test kết nối" để kiểm tra.');
+}
+function setSyncStatus(msg, isError) {
+  const el = document.getElementById('syncStatus');
+  if (el) { el.textContent = msg; el.style.color = isError ? 'var(--danger)' : 'var(--muted)'; }
+}
+async function testWebhook() {
+  const url = localStorage.getItem('srs_webhook_url');
+  if (!url) return showToast('Chưa có webhook URL!', 'warning');
+  setSyncStatus('⏳ Đang test...');
+  try {
+    await fetch(url, { method: 'GET', mode: 'no-cors' });
+    setSyncStatus('✓ Request đã gửi! Mở Google Sheets để xác nhận (no-cors nên không đọc được response).');
+    showToast('✓ Request gửi thành công!', 'success');
+  } catch(err) {
+    setSyncStatus('✗ Lỗi: ' + err.message, true);
+    showToast('✗ Không gửi được: ' + err.message, 'warning');
+  }
+}
+async function syncToSheets() {
+  const url = localStorage.getItem('srs_webhook_url');
+  if (!url) return showToast('Chưa cấu hình webhook! Vào tab ☁️ Sync để thiết lập.', 'warning');
+  setSyncStatus('⏳ Đang gửi dữ liệu...');
+  const payload = {
+    totalMinutesAllTime: state.totalMinutesAllTime || 0,
+    totalMinutes: state.totalMinutes || 0,
+    pendingMinutes: state.pendingMinutes || 0,
+    todayMinutes: state.todayMinutes || 0,
+    streak: state.streak || 0,
+    bigPoints: state.bigPoints || 0,
+    smallTickets: state.smallTickets || 0,
+    bigTickets: state.bigTickets || 0,
+    shoppingFund: state.shoppingFund || 0,
+    dailySmallExchanges: state.dailySmallExchanges || 0,
+    dayMinutes: state.dayMinutes || {},
+    streakRewards: state.streakRewards || [],
+    syncAt: new Date().toISOString()
+  };
+  try {
+    await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
+    const ts = new Date().toLocaleTimeString('vi-VN');
+    localStorage.setItem('srs_last_sync', ts);
+    setSyncStatus('✓ Đã sync lúc ' + ts + '. Mở Google Sheets để xem.');
+    showToast('☁️ Đã sync lên Sheets!', 'success');
+  } catch(err) {
+    setSyncStatus('✗ Lỗi: ' + err.message, true);
+    showToast('✗ Sync thất bại!', 'warning');
+  }
+}
+function toggleAutoSync() {
+  const on = document.getElementById('autoSyncToggle')?.checked;
+  localStorage.setItem('srs_auto_sync', on ? '1' : '0');
+  showToast(on ? '✓ Bật auto-sync sau mỗi phiên' : 'Đã tắt auto-sync', 'info');
+}
+function maybeAutoSync() {
+  if (localStorage.getItem('srs_auto_sync') === '1') syncToSheets();
+}
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `srs-backup-${getTodayStr()}.json` });
+  a.click(); URL.revokeObjectURL(a.href);
+  showToast('✓ Đã xuất file JSON!', 'success');
+}
+function importJSON(event) {
+  const file = event.target.files?.[0]; if (!file) return;
+  if (!confirm('Import sẽ ghi đè toàn bộ dữ liệu hiện tại. Tiếp tục?')) { event.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (typeof imported.totalMinutesAllTime === 'undefined') throw new Error('File không đúng định dạng SRS');
+      state = { ...freshDefaultState(), ...imported };
+      if (!state.dayMinutes) state.dayMinutes = {};
+      recalcStreak(); saveState(); syncRewardEditors(); renderAll();
+      showToast('✓ Import thành công!', 'success');
+    } catch(err) { showToast('✗ Lỗi import: ' + err.message, 'warning'); }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
 }
 function showToast(msg, type = 'info') {
   const container = document.getElementById('toastContainer');
@@ -2128,7 +2344,7 @@ function formatMoneyK(amount) { return `${Math.round(Number(amount) || 0)}k`; }
 function escapeHtml(str) { return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function safeType(t) { return ['add','sub','session'].includes(t) ? t : 'session'; }
 
-document.addEventListener('DOMContentLoaded', () => { checkNewDay(); recalcStreak(); syncRewardEditors(); setWheelMode('small'); renderAll(); });
+document.addEventListener('DOMContentLoaded', () => { checkNewDay(); recalcStreak(); syncRewardEditors(); setWheelMode('small'); renderAll(); initSyncTab(); });
 </script>
 </body>
 </html>

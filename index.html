@@ -2179,100 +2179,143 @@ function switchTab(tab) {
 // ═══════════════════════════════════════
 // GOOGLE SHEETS SYNC
 // ═══════════════════════════════════════
-const APPS_SCRIPT_CODE = `// Paste toàn bộ code này vào Google Apps Script
-// Sau đó: Deploy → New deployment → Web app → Anyone → Deploy
+const APPS_SCRIPT_CODE = `// ================================================
+// STUDY REWARD SYSTEM — Google Apps Script
+// ================================================
+// Cách thiết lập:
+// 1. script.google.com → New project → xóa code cũ → paste code này
+// 2. Save (Ctrl+S)
+// 3. Deploy → New deployment → Web app
+//    · Execute as: Me
+//    · Who has access: Anyone
+// 4. Deploy → Copy URL → paste vào ô Webhook URL trong app
+// ================================================
 
 const SHEET_NAME = 'SRS_Data';
 
-function doPost(e) {
+// Dùng doGet để tránh CORS (POST bị chặn từ browser)
+function doGet(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName(SHEET_NAME);
-    if (!sheet) {
-      sheet = ss.insertSheet(SHEET_NAME);
-      sheet.appendRow(['Thời gian sync','Tổng phút (all-time)','Phút chưa đổi',
-        'Phút hiện tại','Streak','Điểm lớn','Vé nhỏ','Vé lớn',
-        'Quỹ shopping (k)','Vé nhỏ hôm nay','Phút hôm nay','Ngày học (JSON)','Streak rewards']);
+    const action = (e.parameter && e.parameter.action) || 'ping';
+
+    if (action === 'ping') {
+      return jsonResponse({ ok: true, msg: 'SRS webhook sẵn sàng ✓' });
     }
-    sheet.appendRow([
-      new Date().toLocaleString('vi-VN'),
-      data.totalMinutesAllTime || 0,
-      data.pendingMinutes || 0,
-      data.totalMinutes || 0,
-      data.streak || 0,
-      data.bigPoints || 0,
-      data.smallTickets || 0,
-      data.bigTickets || 0,
-      data.shoppingFund || 0,
-      data.dailySmallExchanges || 0,
-      data.todayMinutes || 0,
-      JSON.stringify(data.dayMinutes || {}),
-      JSON.stringify(data.streakRewards || [])
-    ]);
-    return ContentService
-      .createTextOutput(JSON.stringify({ ok: true }))
-      .setMimeType(ContentService.MimeType.JSON);
+
+    if (action === 'sync') {
+      const raw = e.parameter.data;
+      if (!raw) return jsonResponse({ ok: false, error: 'No data param' });
+      const data = JSON.parse(decodeURIComponent(raw));
+      writeToSheet(data);
+      return jsonResponse({ ok: true, ts: new Date().toLocaleString('vi-VN') });
+    }
+
+    return jsonResponse({ ok: false, error: 'Unknown action: ' + action });
+
   } catch(err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ ok: false, error: err.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse({ ok: false, error: err.toString() });
   }
 }
 
-function doGet() {
+function writeToSheet(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    const headers = [
+      'Thời gian sync', 'Tổng phút (all-time)', 'Phút chưa đổi',
+      'Phút hiện tại', 'Streak (ngày)', 'Điểm lớn',
+      'Vé nhỏ', 'Vé lớn', 'Quỹ shopping (k)',
+      'Vé nhỏ hôm nay', 'Phút hôm nay', 'Ngày học (JSON)', 'Streak đã đạt'
+    ];
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1,1,1,headers.length)
+      .setFontWeight('bold')
+      .setBackground('#fce8b2');
+  }
+  sheet.appendRow([
+    new Date().toLocaleString('vi-VN'),
+    data.totalMinutesAllTime || 0,
+    data.pendingMinutes || 0,
+    data.totalMinutes || 0,
+    data.streak || 0,
+    data.bigPoints || 0,
+    data.smallTickets || 0,
+    data.bigTickets || 0,
+    data.shoppingFund || 0,
+    data.dailySmallExchanges || 0,
+    data.todayMinutes || 0,
+    JSON.stringify(data.dayMinutes || {}),
+    (data.streakRewards || []).join(', ')
+  ]);
+}
+
+function jsonResponse(obj) {
   return ContentService
-    .createTextOutput(JSON.stringify({ ok: true, msg: 'SRS webhook ready' }))
+    .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }`;
 
 function initSyncTab() {
   const codeEl = document.getElementById('appsScriptCode');
-  if (codeEl && !codeEl.value) codeEl.value = APPS_SCRIPT_CODE;
+  if (codeEl) codeEl.value = APPS_SCRIPT_CODE;
   const urlEl = document.getElementById('webhookUrl');
   if (urlEl) urlEl.value = localStorage.getItem('srs_webhook_url') || '';
   const autoEl = document.getElementById('autoSyncToggle');
   if (autoEl) autoEl.checked = localStorage.getItem('srs_auto_sync') === '1';
   const lastSync = localStorage.getItem('srs_last_sync');
-  if (lastSync) setSyncStatus('Lần sync cuối: ' + lastSync);
+  setSyncStatus(lastSync ? '☁️ Lần sync cuối: ' + lastSync : 'Chưa sync lần nào.');
 }
 function copyAppsScript() {
   const val = document.getElementById('appsScriptCode')?.value || '';
-  navigator.clipboard?.writeText(val).then(() => showToast('✓ Đã copy code!', 'success')).catch(() => {
-    document.getElementById('appsScriptCode').select();
-    document.execCommand('copy');
-    showToast('✓ Đã copy!', 'success');
-  });
+  navigator.clipboard?.writeText(val)
+    .then(() => showToast('✓ Đã copy code Apps Script!', 'success'))
+    .catch(() => {
+      document.getElementById('appsScriptCode').select();
+      document.execCommand('copy');
+      showToast('✓ Đã copy!', 'success');
+    });
 }
 function saveWebhookUrl() {
   const url = (document.getElementById('webhookUrl')?.value || '').trim();
   if (!url) return showToast('Nhập URL webhook trước!', 'warning');
-  if (!url.startsWith('https://script.google.com')) return showToast('URL phải bắt đầu bằng https://script.google.com', 'warning');
+  if (!url.startsWith('https://script.google.com')) {
+    return showToast('URL phải bắt đầu bằng https://script.google.com', 'warning');
+  }
   localStorage.setItem('srs_webhook_url', url);
   showToast('✓ Đã lưu webhook URL!', 'success');
   setSyncStatus('✓ URL đã lưu. Bấm "Test kết nối" để kiểm tra.');
 }
 function setSyncStatus(msg, isError) {
   const el = document.getElementById('syncStatus');
-  if (el) { el.textContent = msg; el.style.color = isError ? 'var(--danger)' : 'var(--muted)'; }
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--danger)' : 'var(--muted)';
 }
 async function testWebhook() {
   const url = localStorage.getItem('srs_webhook_url');
-  if (!url) return showToast('Chưa có webhook URL!', 'warning');
-  setSyncStatus('⏳ Đang test...');
+  if (!url) return showToast('Chưa có webhook URL! Lưu URL trước.', 'warning');
+  setSyncStatus('⏳ Đang test kết nối...');
   try {
-    await fetch(url, { method: 'GET', mode: 'no-cors' });
-    setSyncStatus('✓ Request đã gửi! Mở Google Sheets để xác nhận (no-cors nên không đọc được response).');
-    showToast('✓ Request gửi thành công!', 'success');
+    const resp = await fetch(url + '?action=ping');
+    const json = await resp.json();
+    if (json.ok) {
+      setSyncStatus('✓ Kết nối OK! Apps Script hoạt động bình thường.');
+      showToast('✓ Webhook hoạt động!', 'success');
+    } else {
+      setSyncStatus('✗ Apps Script trả lỗi: ' + (json.error || 'unknown'), true);
+      showToast('✗ Webhook lỗi!', 'warning');
+    }
   } catch(err) {
-    setSyncStatus('✗ Lỗi: ' + err.message, true);
-    showToast('✗ Không gửi được: ' + err.message, 'warning');
+    setSyncStatus('✗ ' + err.message + ' — Kiểm tra URL và cài deploy "Anyone".', true);
+    showToast('✗ Kết nối thất bại!', 'warning');
   }
 }
 async function syncToSheets() {
   const url = localStorage.getItem('srs_webhook_url');
   if (!url) return showToast('Chưa cấu hình webhook! Vào tab ☁️ Sync để thiết lập.', 'warning');
-  setSyncStatus('⏳ Đang gửi dữ liệu...');
+  setSyncStatus('⏳ Đang gửi dữ liệu lên Google Sheets...');
   const payload = {
     totalMinutesAllTime: state.totalMinutesAllTime || 0,
     totalMinutes: state.totalMinutes || 0,
@@ -2289,43 +2332,61 @@ async function syncToSheets() {
     syncAt: new Date().toISOString()
   };
   try {
-    await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
-    const ts = new Date().toLocaleTimeString('vi-VN');
-    localStorage.setItem('srs_last_sync', ts);
-    setSyncStatus('✓ Đã sync lúc ' + ts + '. Mở Google Sheets để xem.');
-    showToast('☁️ Đã sync lên Sheets!', 'success');
+    // GET + URL-encoded params: tránh hoàn toàn CORS preflight
+    const encoded = encodeURIComponent(JSON.stringify(payload));
+    const resp = await fetch(url + '?action=sync&data=' + encoded);
+    const json = await resp.json();
+    if (json.ok) {
+      const ts = new Date().toLocaleTimeString('vi-VN');
+      localStorage.setItem('srs_last_sync', ts);
+      setSyncStatus('✓ Sync thành công lúc ' + ts + ' — Mở Google Sheets để xem!');
+      showToast('☁️ Sync lên Sheets thành công!', 'success');
+    } else {
+      setSyncStatus('✗ Sheets báo lỗi: ' + (json.error || 'unknown'), true);
+      showToast('✗ Sync thất bại!', 'warning');
+    }
   } catch(err) {
-    setSyncStatus('✗ Lỗi: ' + err.message, true);
+    setSyncStatus('✗ Lỗi mạng: ' + err.message, true);
     showToast('✗ Sync thất bại!', 'warning');
   }
 }
 function toggleAutoSync() {
   const on = document.getElementById('autoSyncToggle')?.checked;
   localStorage.setItem('srs_auto_sync', on ? '1' : '0');
-  showToast(on ? '✓ Bật auto-sync sau mỗi phiên' : 'Đã tắt auto-sync', 'info');
+  showToast(on ? '✓ Bật auto-sync sau mỗi phiên học' : 'Đã tắt auto-sync', 'info');
 }
 function maybeAutoSync() {
   if (localStorage.getItem('srs_auto_sync') === '1') syncToSheets();
 }
 function exportJSON() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `srs-backup-${getTodayStr()}.json` });
-  a.click(); URL.revokeObjectURL(a.href);
-  showToast('✓ Đã xuất file JSON!', 'success');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: 'srs-backup-' + getTodayStr() + '.json'
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('✓ Đã xuất file JSON backup!', 'success');
 }
 function importJSON(event) {
-  const file = event.target.files?.[0]; if (!file) return;
-  if (!confirm('Import sẽ ghi đè toàn bộ dữ liệu hiện tại. Tiếp tục?')) { event.target.value = ''; return; }
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (!confirm('Import sẽ ghi đè toàn bộ dữ liệu hiện tại. Tiếp tục?')) {
+    event.target.value = ''; return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const imported = JSON.parse(e.target.result);
-      if (typeof imported.totalMinutesAllTime === 'undefined') throw new Error('File không đúng định dạng SRS');
+      if (typeof imported.totalMinutesAllTime === 'undefined')
+        throw new Error('File không đúng định dạng SRS');
       state = { ...freshDefaultState(), ...imported };
       if (!state.dayMinutes) state.dayMinutes = {};
       recalcStreak(); saveState(); syncRewardEditors(); renderAll();
       showToast('✓ Import thành công!', 'success');
-    } catch(err) { showToast('✗ Lỗi import: ' + err.message, 'warning'); }
+    } catch(err) {
+      showToast('✗ Lỗi import: ' + err.message, 'warning');
+    }
     event.target.value = '';
   };
   reader.readAsText(file);

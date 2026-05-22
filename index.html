@@ -1126,7 +1126,8 @@
     box-shadow: var(--shadow);
   }
 
-</style></head>
+</style><script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
 <body>
 
 <div class="wrapper">
@@ -1358,43 +1359,47 @@
 
   <div class="tab-panel" id="tab-sync">
     <div class="section">
-      <div class="section-title"><span class="dot" style="background:var(--accent3)"></span>SYNC VỚI GOOGLE SHEETS</div>
+      <div class="section-title"><span class="dot" style="background:var(--accent3)"></span>SYNC VỚI GOOGLE DRIVE API</div>
       <p style="font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:14px">
-        Dữ liệu lưu trên trình duyệt (localStorage). Dùng Google Apps Script để backup tự động lên Sheets — không cần OAuth, chỉ paste URL webhook.
+        Dữ liệu vẫn lưu nhanh trên trình duyệt (localStorage), nhưng có thể backup/restore thành 1 file JSON trên Google Drive bằng OAuth. Cách này không dùng Apps Script webhook nữa.
       </p>
+
       <div class="rule-box" style="margin-bottom:14px;font-size:.8rem">
-        <strong>Cách thiết lập (1 lần duy nhất):</strong><br/>
-        1. Vào <a href="https://script.google.com" target="_blank" style="color:var(--accent3)">script.google.com</a> → New project<br/>
-        2. Xóa code mặc định, paste code từ ô bên dưới vào<br/>
-        3. <strong>Deploy → New deployment → Web app → Who has access: Anyone → Deploy</strong><br/>
-        4. Copy URL → paste vào ô Webhook URL bên dưới → Lưu URL
+        <strong>Thiết lập 1 lần:</strong><br/>
+        1. Vào Google Cloud Console → tạo OAuth Client ID loại <strong>Web application</strong><br/>
+        2. Bật <strong>Google Drive API</strong> trong project đó<br/>
+        3. Thêm domain đang chạy app vào <strong>Authorized JavaScript origins</strong>.<br/>
+        <span class="tag tag-yellow">Lưu ý</span> Nếu mở file bằng <strong>file://</strong>, Google đăng nhập thường không chạy. Hãy chạy bằng localhost/GitHub Pages/Netlify rồi thêm origin tương ứng, ví dụ <strong>http://localhost:5500</strong>.
       </div>
-      <div class="section-title" style="margin-bottom:6px"><span class="dot" style="background:var(--success)"></span>CODE APPS SCRIPT</div>
-      <div style="position:relative;margin-bottom:14px">
-        <textarea id="appsScriptCode" readonly style="width:100%;min-height:190px;resize:vertical;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:12px;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.5;outline:none"></textarea>
-        <button class="btn sm info" style="position:absolute;top:8px;right:8px;z-index:1" onclick="copyAppsScript()">📋 Copy</button>
-      </div>
-      <div class="section-title" style="margin-bottom:6px"><span class="dot" style="background:var(--accent2)"></span>WEBHOOK URL</div>
+
+      <div class="section-title" style="margin-bottom:6px"><span class="dot" style="background:var(--accent2)"></span>GOOGLE OAUTH CLIENT ID</div>
       <div class="adjust-row" style="margin-bottom:10px">
-        <div class="input-group" style="flex:1"><input type="url" id="webhookUrl" placeholder="https://script.google.com/macros/s/.../exec"/></div>
+        <div class="input-group" style="flex:1"><input type="text" id="googleClientId" placeholder="xxxxx.apps.googleusercontent.com"/></div>
       </div>
+
       <div class="controls-grid" style="margin-bottom:8px">
-        <button class="btn primary" onclick="saveWebhookUrl()">💾 Lưu URL</button>
-        <button class="btn info" onclick="testWebhook()">🔗 Test kết nối</button>
+        <button class="btn primary" onclick="saveGoogleClientId()">💾 Lưu Client ID</button>
+        <button class="btn info" onclick="connectGoogleDrive()">🔐 Kết nối Drive</button>
       </div>
       <div id="syncStatus" style="font-size:.78rem;color:var(--muted);min-height:18px;margin-bottom:14px"></div>
+
       <hr class="divider"/>
-      <div class="section-title" style="margin-bottom:8px"><span class="dot" style="background:var(--accent2)"></span>BACKUP & RESTORE</div>
+      <div class="section-title" style="margin-bottom:8px"><span class="dot" style="background:var(--success)"></span>BACKUP & RESTORE DRIVE</div>
       <div class="controls-grid">
-        <button class="btn warning" onclick="syncToSheets()">📤 Sync lên Sheets ngay</button>
-        <button class="btn info" onclick="exportJSON()">💾 Xuất JSON</button>
+        <button class="btn warning" onclick="syncToDrive()">📤 Sync lên Drive ngay</button>
+        <button class="btn info" onclick="restoreFromDrive()">📥 Tải dữ liệu từ Drive</button>
+      </div>
+      <div class="controls-grid" style="margin-top:10px">
+        <button class="btn info" onclick="exportJSON()">💾 Xuất JSON về máy</button>
+        <button class="btn danger" onclick="disconnectGoogleDrive()">Đăng xuất Drive</button>
       </div>
       <div style="margin-top:10px">
         <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;cursor:pointer;user-select:none">
           <input type="checkbox" id="autoSyncToggle" onchange="toggleAutoSync()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)"/>
-          Tự động sync sau mỗi phiên học
+          Tự động sync lên Drive sau mỗi phiên học
         </label>
       </div>
+      <p class="tiny-note" style="margin-top:10px">File backup mặc định: <strong>study-reward-system-backup.json</strong>. Quyền <strong>drive.file</strong> chỉ cho app thao tác với file do app tạo/chọn, không đọc toàn bộ Drive.</p>
     </div>
     <div class="section">
       <div class="section-title"><span class="dot" style="background:var(--danger)"></span>IMPORT JSON</div>
@@ -2179,185 +2184,272 @@ function switchTab(tab) {
 // ═══════════════════════════════════════
 // GOOGLE SHEETS SYNC
 // ═══════════════════════════════════════
-const APPS_SCRIPT_CODE = `// ================================================
-// STUDY REWARD SYSTEM — Google Apps Script
-// ================================================
-// Cách thiết lập:
-// 1. script.google.com → New project → xóa code cũ → paste code này
-// 2. Save (Ctrl+S)
-// 3. Deploy → New deployment → Web app
-//    · Execute as: Me
-//    · Who has access: Anyone
-// 4. Deploy → Copy URL → paste vào ô Webhook URL trong app
-// ================================================
 
-const SHEET_NAME = 'SRS_Data';
-
-// Dùng doGet để tránh CORS (POST bị chặn từ browser)
-function doGet(e) {
-  try {
-    const action = (e.parameter && e.parameter.action) || 'ping';
-
-    if (action === 'ping') {
-      return jsonResponse({ ok: true, msg: 'SRS webhook sẵn sàng ✓' });
-    }
-
-    if (action === 'sync') {
-      const raw = e.parameter.data;
-      if (!raw) return jsonResponse({ ok: false, error: 'No data param' });
-      const data = JSON.parse(decodeURIComponent(raw));
-      writeToSheet(data);
-      return jsonResponse({ ok: true, ts: new Date().toLocaleString('vi-VN') });
-    }
-
-    return jsonResponse({ ok: false, error: 'Unknown action: ' + action });
-
-  } catch(err) {
-    return jsonResponse({ ok: false, error: err.toString() });
-  }
-}
-
-function writeToSheet(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-    const headers = [
-      'Thời gian sync', 'Tổng phút (all-time)', 'Phút chưa đổi',
-      'Phút hiện tại', 'Streak (ngày)', 'Điểm lớn',
-      'Vé nhỏ', 'Vé lớn', 'Quỹ shopping (k)',
-      'Vé nhỏ hôm nay', 'Phút hôm nay', 'Ngày học (JSON)', 'Streak đã đạt'
-    ];
-    sheet.appendRow(headers);
-    sheet.setFrozenRows(1);
-    sheet.getRange(1,1,1,headers.length)
-      .setFontWeight('bold')
-      .setBackground('#fce8b2');
-  }
-  sheet.appendRow([
-    new Date().toLocaleString('vi-VN'),
-    data.totalMinutesAllTime || 0,
-    data.pendingMinutes || 0,
-    data.totalMinutes || 0,
-    data.streak || 0,
-    data.bigPoints || 0,
-    data.smallTickets || 0,
-    data.bigTickets || 0,
-    data.shoppingFund || 0,
-    data.dailySmallExchanges || 0,
-    data.todayMinutes || 0,
-    JSON.stringify(data.dayMinutes || {}),
-    (data.streakRewards || []).join(', ')
-  ]);
-}
-
-function jsonResponse(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}`;
+const DRIVE_BACKUP_FILE_NAME = 'study-reward-system-backup.json';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+let googleTokenClient = null;
+let googleAccessToken = '';
 
 function initSyncTab() {
-  const codeEl = document.getElementById('appsScriptCode');
-  if (codeEl) codeEl.value = APPS_SCRIPT_CODE;
-  const urlEl = document.getElementById('webhookUrl');
-  if (urlEl) urlEl.value = localStorage.getItem('srs_webhook_url') || '';
+  const clientEl = document.getElementById('googleClientId');
+  if (clientEl) clientEl.value = localStorage.getItem('srs_google_client_id') || '';
   const autoEl = document.getElementById('autoSyncToggle');
   if (autoEl) autoEl.checked = localStorage.getItem('srs_auto_sync') === '1';
   const lastSync = localStorage.getItem('srs_last_sync');
-  setSyncStatus(lastSync ? '☁️ Lần sync cuối: ' + lastSync : 'Chưa sync lần nào.');
+  const fileId = localStorage.getItem('srs_drive_file_id');
+  const msg = lastSync
+    ? '☁️ Lần sync cuối: ' + lastSync + (fileId ? ' · Đã có file Drive.' : '')
+    : 'Chưa sync lần nào. Hãy lưu Client ID rồi bấm “Kết nối Drive”.';
+  setSyncStatus(msg);
 }
-function copyAppsScript() {
-  const val = document.getElementById('appsScriptCode')?.value || '';
-  navigator.clipboard?.writeText(val)
-    .then(() => showToast('✓ Đã copy code Apps Script!', 'success'))
-    .catch(() => {
-      document.getElementById('appsScriptCode').select();
-      document.execCommand('copy');
-      showToast('✓ Đã copy!', 'success');
-    });
-}
-function saveWebhookUrl() {
-  const url = (document.getElementById('webhookUrl')?.value || '').trim();
-  if (!url) return showToast('Nhập URL webhook trước!', 'warning');
-  if (!url.startsWith('https://script.google.com')) {
-    return showToast('URL phải bắt đầu bằng https://script.google.com', 'warning');
-  }
-  localStorage.setItem('srs_webhook_url', url);
-  showToast('✓ Đã lưu webhook URL!', 'success');
-  setSyncStatus('✓ URL đã lưu. Bấm "Test kết nối" để kiểm tra.');
-}
+
 function setSyncStatus(msg, isError) {
   const el = document.getElementById('syncStatus');
   if (!el) return;
   el.textContent = msg;
   el.style.color = isError ? 'var(--danger)' : 'var(--muted)';
 }
-async function testWebhook() {
-  const url = localStorage.getItem('srs_webhook_url');
-  if (!url) return showToast('Chưa có webhook URL! Lưu URL trước.', 'warning');
-  setSyncStatus('⏳ Đang test kết nối...');
-  try {
-    const resp = await fetch(url + '?action=ping');
-    const json = await resp.json();
-    if (json.ok) {
-      setSyncStatus('✓ Kết nối OK! Apps Script hoạt động bình thường.');
-      showToast('✓ Webhook hoạt động!', 'success');
-    } else {
-      setSyncStatus('✗ Apps Script trả lỗi: ' + (json.error || 'unknown'), true);
-      showToast('✗ Webhook lỗi!', 'warning');
+
+function saveGoogleClientId() {
+  const clientId = (document.getElementById('googleClientId')?.value || '').trim();
+  if (!clientId) return showToast('Nhập Google OAuth Client ID trước!', 'warning');
+  if (!clientId.endsWith('.apps.googleusercontent.com')) {
+    return showToast('Client ID thường có dạng ...apps.googleusercontent.com', 'warning');
+  }
+  localStorage.setItem('srs_google_client_id', clientId);
+  googleTokenClient = null;
+  showToast('✓ Đã lưu Google Client ID!', 'success');
+  setSyncStatus('✓ Client ID đã lưu. Bấm “Kết nối Drive” để cấp quyền.');
+}
+
+function getGoogleClientId() {
+  return (document.getElementById('googleClientId')?.value || localStorage.getItem('srs_google_client_id') || '').trim();
+}
+
+function waitForGoogleIdentity() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.oauth2) return resolve();
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts++;
+      if (window.google?.accounts?.oauth2) {
+        clearInterval(timer); resolve();
+      } else if (attempts > 40) {
+        clearInterval(timer);
+        reject(new Error('Không tải được Google Identity Services. Kiểm tra mạng hoặc ad-blocker.'));
+      }
+    }, 100);
+  });
+}
+
+async function ensureDriveToken(interactive = true) {
+  const clientId = getGoogleClientId();
+  if (!clientId) throw new Error('Chưa có Google OAuth Client ID.');
+  await waitForGoogleIdentity();
+
+  if (googleAccessToken && !interactive) return googleAccessToken;
+
+  return new Promise((resolve, reject) => {
+    googleTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: DRIVE_SCOPE,
+      prompt: interactive ? 'consent' : '',
+      callback: (resp) => {
+        if (resp.error) return reject(new Error(resp.error));
+        googleAccessToken = resp.access_token;
+        resolve(googleAccessToken);
+      },
+      error_callback: (err) => reject(new Error(err?.message || err?.type || 'Không đăng nhập được Google.'))
+    });
+
+    try {
+      googleTokenClient.requestAccessToken({ prompt: interactive ? 'consent' : '' });
+    } catch (err) {
+      reject(err);
     }
-  } catch(err) {
-    setSyncStatus('✗ ' + err.message + ' — Kiểm tra URL và cài deploy "Anyone".', true);
-    showToast('✗ Kết nối thất bại!', 'warning');
+  });
+}
+
+async function connectGoogleDrive() {
+  try {
+    setSyncStatus('⏳ Đang mở Google login...');
+    await ensureDriveToken(true);
+    const file = await findDriveBackupFile();
+    if (file?.id) {
+      localStorage.setItem('srs_drive_file_id', file.id);
+      setSyncStatus('✓ Đã kết nối Drive. Tìm thấy file backup cập nhật lúc ' + new Date(file.modifiedTime).toLocaleString('vi-VN') + '.');
+    } else {
+      setSyncStatus('✓ Đã kết nối Drive. Chưa có file backup, bấm “Sync lên Drive ngay” để tạo.');
+    }
+    showToast('✓ Kết nối Google Drive thành công!', 'success');
+  } catch (err) {
+    setSyncStatus('✗ ' + err.message, true);
+    showToast('✗ Kết nối Drive thất bại!', 'warning');
   }
 }
-async function syncToSheets() {
-  const url = localStorage.getItem('srs_webhook_url');
-  if (!url) return showToast('Chưa cấu hình webhook! Vào tab ☁️ Sync để thiết lập.', 'warning');
-  setSyncStatus('⏳ Đang gửi dữ liệu lên Google Sheets...');
-  const payload = {
-    totalMinutesAllTime: state.totalMinutesAllTime || 0,
-    totalMinutes: state.totalMinutes || 0,
-    pendingMinutes: state.pendingMinutes || 0,
-    todayMinutes: state.todayMinutes || 0,
-    streak: state.streak || 0,
-    bigPoints: state.bigPoints || 0,
-    smallTickets: state.smallTickets || 0,
-    bigTickets: state.bigTickets || 0,
-    shoppingFund: state.shoppingFund || 0,
-    dailySmallExchanges: state.dailySmallExchanges || 0,
-    dayMinutes: state.dayMinutes || {},
-    streakRewards: state.streakRewards || [],
-    syncAt: new Date().toISOString()
+
+function disconnectGoogleDrive() {
+  if (googleAccessToken && window.google?.accounts?.oauth2?.revoke) {
+    google.accounts.oauth2.revoke(googleAccessToken);
+  }
+  googleAccessToken = '';
+  googleTokenClient = null;
+  localStorage.removeItem('srs_drive_file_id');
+  setSyncStatus('Đã ngắt kết nối Drive trên phiên này.');
+  showToast('Đã đăng xuất Drive', 'info');
+}
+
+async function driveFetch(url, options = {}) {
+  if (!googleAccessToken) await ensureDriveToken(true);
+  const resp = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: 'Bearer ' + googleAccessToken
+    }
+  });
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => '');
+    throw new Error('Google Drive lỗi ' + resp.status + ': ' + (text || resp.statusText));
+  }
+  return resp;
+}
+
+async function findDriveBackupFile() {
+  const savedId = localStorage.getItem('srs_drive_file_id');
+  if (savedId) {
+    try {
+      const resp = await driveFetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(savedId) + '?fields=id,name,modifiedTime,webViewLink');
+      return await resp.json();
+    } catch (_) {
+      localStorage.removeItem('srs_drive_file_id');
+    }
+  }
+
+  const q = encodeURIComponent("name='" + DRIVE_BACKUP_FILE_NAME.replace(/'/g, "\\'") + "' and trashed=false");
+  const resp = await driveFetch('https://www.googleapis.com/drive/v3/files?q=' + q + '&spaces=drive&fields=files(id,name,modifiedTime,webViewLink)&pageSize=10');
+  const json = await resp.json();
+  const file = (json.files || [])[0] || null;
+  if (file?.id) localStorage.setItem('srs_drive_file_id', file.id);
+  return file;
+}
+
+function buildDriveBackupPayload() {
+  return {
+    app: 'study-reward-system',
+    version: 2,
+    syncedAt: new Date().toISOString(),
+    state
   };
+}
+
+async function createDriveBackupFile() {
+  const boundary = 'srs_boundary_' + Date.now();
+  const metadata = {
+    name: DRIVE_BACKUP_FILE_NAME,
+    mimeType: 'application/json',
+    appProperties: { app: 'study-reward-system' }
+  };
+  const body =
+    '--' + boundary + '\r\n' +
+    'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+    JSON.stringify(metadata) + '\r\n' +
+    '--' + boundary + '\r\n' +
+    'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+    JSON.stringify(buildDriveBackupPayload(), null, 2) + '\r\n' +
+    '--' + boundary + '--';
+
+  const resp = await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,modifiedTime,webViewLink', {
+    method: 'POST',
+    headers: { 'Content-Type': 'multipart/related; boundary=' + boundary },
+    body
+  });
+  const file = await resp.json();
+  localStorage.setItem('srs_drive_file_id', file.id);
+  return file;
+}
+
+async function updateDriveBackupFile(fileId) {
+  const resp = await driveFetch('https://www.googleapis.com/upload/drive/v3/files/' + encodeURIComponent(fileId) + '?uploadType=media&fields=id,name,modifiedTime,webViewLink', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify(buildDriveBackupPayload(), null, 2)
+  });
+  return await resp.json();
+}
+
+async function syncToDrive() {
   try {
-    // GET + URL-encoded params: tránh hoàn toàn CORS preflight
-    const encoded = encodeURIComponent(JSON.stringify(payload));
-    const resp = await fetch(url + '?action=sync&data=' + encoded);
-    const json = await resp.json();
-    if (json.ok) {
-      const ts = new Date().toLocaleTimeString('vi-VN');
-      localStorage.setItem('srs_last_sync', ts);
-      setSyncStatus('✓ Sync thành công lúc ' + ts + ' — Mở Google Sheets để xem!');
-      showToast('☁️ Sync lên Sheets thành công!', 'success');
-    } else {
-      setSyncStatus('✗ Sheets báo lỗi: ' + (json.error || 'unknown'), true);
-      showToast('✗ Sync thất bại!', 'warning');
-    }
-  } catch(err) {
-    setSyncStatus('✗ Lỗi mạng: ' + err.message, true);
-    showToast('✗ Sync thất bại!', 'warning');
+    setSyncStatus('⏳ Đang sync dữ liệu lên Google Drive...');
+    await ensureDriveToken(true);
+    let file = await findDriveBackupFile();
+    file = file?.id ? await updateDriveBackupFile(file.id) : await createDriveBackupFile();
+    const ts = new Date().toLocaleString('vi-VN');
+    localStorage.setItem('srs_last_sync', ts);
+    setSyncStatus('✓ Đã sync lên Drive lúc ' + ts + '. File: ' + file.name);
+    showToast('✓ Đã backup lên Google Drive!', 'success');
+  } catch (err) {
+    setSyncStatus('✗ Sync Drive lỗi: ' + err.message, true);
+    showToast('✗ Sync Drive thất bại!', 'warning');
   }
 }
+
+async function restoreFromDrive() {
+  if (!confirm('Tải dữ liệu từ Google Drive sẽ ghi đè dữ liệu hiện tại trên trình duyệt. Tiếp tục?')) return;
+  try {
+    setSyncStatus('⏳ Đang tải dữ liệu từ Google Drive...');
+    await ensureDriveToken(true);
+    const file = await findDriveBackupFile();
+    if (!file?.id) throw new Error('Chưa tìm thấy file backup trên Drive.');
+    const resp = await driveFetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(file.id) + '?alt=media');
+    const backup = await resp.json();
+    const importedState = backup.state || backup;
+    if (typeof importedState.totalMinutesAllTime === 'undefined') {
+      throw new Error('File backup không đúng định dạng Study Reward System.');
+    }
+
+    state = { ...freshDefaultState(), ...importedState };
+    if (!state.dayMinutes) state.dayMinutes = {};
+    if (!Array.isArray(state.streakRewardSettings) || !state.streakRewardSettings.length) state.streakRewardSettings = DEFAULT_STREAK_REWARDS;
+    state.streakRewardSettings = normalizeStreakRewardSettings(state.streakRewardSettings);
+    recalcStreak();
+    saveState();
+    syncRewardEditors();
+    renderAll();
+
+    const ts = new Date().toLocaleString('vi-VN');
+    localStorage.setItem('srs_last_sync', ts);
+    setSyncStatus('✓ Đã khôi phục từ Drive lúc ' + ts + '.');
+    showToast('✓ Restore từ Drive thành công!', 'success');
+  } catch (err) {
+    setSyncStatus('✗ Restore Drive lỗi: ' + err.message, true);
+    showToast('✗ Restore thất bại!', 'warning');
+  }
+}
+
 function toggleAutoSync() {
   const on = document.getElementById('autoSyncToggle')?.checked;
   localStorage.setItem('srs_auto_sync', on ? '1' : '0');
-  showToast(on ? '✓ Bật auto-sync sau mỗi phiên học' : 'Đã tắt auto-sync', 'info');
+  showToast(on ? '✓ Bật auto-sync lên Drive sau mỗi phiên học' : 'Đã tắt auto-sync', 'info');
 }
-function maybeAutoSync() {
-  if (localStorage.getItem('srs_auto_sync') === '1') syncToSheets();
+
+async function maybeAutoSync() {
+  if (localStorage.getItem('srs_auto_sync') !== '1') return;
+  if (!googleAccessToken) {
+    setSyncStatus('Auto-sync cần bấm “Kết nối Drive” ít nhất 1 lần trong phiên này.');
+    return;
+  }
+  try {
+    let file = await findDriveBackupFile();
+    file = file?.id ? await updateDriveBackupFile(file.id) : await createDriveBackupFile();
+    const ts = new Date().toLocaleString('vi-VN');
+    localStorage.setItem('srs_last_sync', ts);
+    setSyncStatus('✓ Auto-sync Drive lúc ' + ts + '.');
+  } catch (err) {
+    setSyncStatus('✗ Auto-sync Drive lỗi: ' + err.message, true);
+  }
 }
+
 function exportJSON() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
   const a = Object.assign(document.createElement('a'), {
